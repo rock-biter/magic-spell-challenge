@@ -1,0 +1,8 @@
+Model Information:
+* title:	Red Deer Calf animations
+* source:	https://sketchfab.com/3d-models/red-deer-calf-animations-ff6d05fe41dd49ada3f7a5ea8f3fb6b7
+* author:	RedDeer (https://sketchfab.com/billl90)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
