@@ -427,7 +427,12 @@ const sizes = {
  * Camera
  */
 const fov = 60
-const camera = new THREE.PerspectiveCamera(fov, sizes.width / sizes.height, 0.1)
+const camera = new THREE.PerspectiveCamera(
+	fov,
+	sizes.width / sizes.height,
+	0.01,
+	50
+)
 camera.position.set(7, 7, 10)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
