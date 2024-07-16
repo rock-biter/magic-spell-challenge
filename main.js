@@ -13,6 +13,10 @@ import simplexNoise4D from './src/shaders/simplex-noise-4d.glsl'
 import particlesVertexShader from './src/shaders/particles/vertex.glsl'
 import particlesFragmentShader from './src/shaders/particles/fragment.glsl'
 import gpgpuParticlesShader from './src/shaders/gpgpu/particles.glsl'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 const loadingManager = new THREE.LoadingManager()
 const gltfLoader = new GLTFLoader(loadingManager)
@@ -23,7 +27,12 @@ const deer = {
 	uniforms: null,
 }
 
-const debugObject = {}
+const debugObject = {
+	threshold: 0.33,
+	strength: 0.7,
+	radius: 0,
+	exposure: 1.25,
+}
 
 gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	deer.model = gltf.scene
@@ -164,7 +173,7 @@ function createGPGPUParticles({ mesh }) {
 		vertexShader: particlesVertexShader,
 		fragmentShader: particlesFragmentShader,
 		uniforms: {
-			uSize: new THREE.Uniform(0.03),
+			uSize: new THREE.Uniform(0.055),
 			uResolution: new THREE.Uniform(
 				new THREE.Vector2(
 					sizes.width * sizes.pixelRatio,
@@ -434,10 +443,11 @@ scene.add(axesHelper)
  */
 const renderer = new THREE.WebGLRenderer({
 	antialias: window.devicePixelRatio < 2,
-	logarithmicDepthBuffer: true,
+	// logarithmicDepthBuffer: true,
 })
+renderer.toneMapping = THREE.ReinhardToneMapping
+renderer.toneMappingExposure = Math.pow(debugObject.exposure, 4.0)
 document.body.appendChild(renderer.domElement)
-handleResize()
 
 /**
  * OrbitControls
@@ -464,6 +474,53 @@ scene.add(ambientLight)
 const clock = new THREE.Clock()
 let prevTime = 0
 
+// BLOOM effect
+const renderScene = new RenderPass(scene, camera)
+
+const bloomPass = new UnrealBloomPass(
+	new THREE.Vector2(window.innerWidth, window.innerHeight),
+	1.5,
+	0.4,
+	0.85
+)
+bloomPass.threshold = debugObject.threshold
+bloomPass.strength = debugObject.strength
+bloomPass.radius = debugObject.radius
+
+const outputPass = new OutputPass()
+
+const composer = new EffectComposer(renderer)
+composer.addPass(renderScene)
+composer.addPass(bloomPass)
+composer.addPass(outputPass)
+
+const bloomFolder = gui.addFolder('bloom')
+
+bloomFolder.add(debugObject, 'threshold', 0.0, 1.0).onChange(function (value) {
+	bloomPass.threshold = Number(value)
+})
+
+bloomFolder.add(debugObject, 'strength', 0.0, 3.0).onChange(function (value) {
+	bloomPass.strength = Number(value)
+})
+
+bloomFolder
+	.add(debugObject, 'radius', 0.0, 1.0)
+	.step(0.01)
+	.onChange(function (value) {
+		bloomPass.radius = Number(value)
+	})
+
+const toneMappingFolder = gui.addFolder('tone mapping')
+
+toneMappingFolder
+	.add(debugObject, 'exposure', 0.1, 2)
+	.onChange(function (value) {
+		renderer.toneMappingExposure = Math.pow(value, 4.0)
+		// tic()
+	})
+
+handleResize()
 /**
  * frame loop
  */
@@ -501,7 +558,8 @@ function tic() {
 			gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable).texture
 	}
 
-	renderer.render(scene, camera)
+	// renderer.render(scene, camera)
+	composer.render()
 
 	requestAnimationFrame(tic)
 }
@@ -521,6 +579,7 @@ function handleResize() {
 	camera.updateProjectionMatrix()
 
 	renderer.setSize(sizes.width, sizes.height)
+	composer.setSize(sizes.width, sizes.height)
 
 	// Materials
 	if (particles.material) {
@@ -531,4 +590,5 @@ function handleResize() {
 	}
 
 	renderer.setPixelRatio(sizes.pixelRatio)
+	composer.setPixelRatio(sizes.pixelRatio)
 }
