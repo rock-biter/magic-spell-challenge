@@ -29,7 +29,7 @@ const deer = {
 
 const debugObject = {
 	threshold: 0.33,
-	strength: 0.7,
+	strength: 0.4,
 	radius: 0,
 	exposure: 1.25,
 }
