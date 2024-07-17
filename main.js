@@ -123,16 +123,16 @@ function createGPGPUParticles({ mesh }) {
 	gpgpu.computation.init()
 
 	// Debug
-	gpgpu.debug = new THREE.Mesh(
-		new THREE.PlaneGeometry(3, 3),
-		new THREE.MeshBasicMaterial({
-			map: gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable)
-				.texture,
-		})
-	)
-	gpgpu.debug.position.x = 3
-	gpgpu.debug.visible = false
-	scene.add(gpgpu.debug)
+	// gpgpu.debug = new THREE.Mesh(
+	// 	new THREE.PlaneGeometry(3, 3),
+	// 	new THREE.MeshBasicMaterial({
+	// 		map: gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable)
+	// 			.texture,
+	// 	})
+	// )
+	// gpgpu.debug.position.x = 3
+	// gpgpu.debug.visible = false
+	// scene.add(gpgpu.debug)
 
 	// particles
 	// Geometry
@@ -188,6 +188,7 @@ function createGPGPUParticles({ mesh }) {
 	// Points
 	particles.points = new THREE.Points(particles.geometry, particles.material)
 	particles.points.scale.setScalar(0.075)
+	particles.points.frustumCulled = false
 	scene.add(particles.points)
 
 	/**
@@ -431,7 +432,7 @@ const camera = new THREE.PerspectiveCamera(
 	fov,
 	sizes.width / sizes.height,
 	0.01,
-	50
+	200
 )
 camera.position.set(7, 7, 10)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
@@ -496,7 +497,7 @@ const outputPass = new OutputPass()
 
 const composer = new EffectComposer(renderer)
 composer.addPass(renderScene)
-composer.addPass(bloomPass)
+composer.addPass(bloomPass) // this create a glitch (why??)
 composer.addPass(outputPass)
 
 const bloomFolder = gui.addFolder('bloom')
