@@ -53,6 +53,8 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 			// })
 			const mat = el.material
 			deer.material = mat
+			deer.mesh = el
+			console.log(deer.mesh)
 
 			patronum(mat)
 
@@ -65,7 +67,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 
 	runJump.play()
 
-	console.log(deer.model, gltf)
+	// console.log(deer.model, gltf)
 })
 
 const gpgpu = {}
@@ -152,6 +154,10 @@ function createGPGPUParticles({ mesh }) {
 	gpgpu.particlesVariable.material.uniforms.uSkinWeightTexture =
 		new THREE.Uniform(skinWeightTexture)
 
+	gpgpu.particlesVariable.material.uniforms.uBoneTexture = new THREE.Uniform(
+		mesh.skeleton.boneTexture
+	)
+
 	// add uniforms params
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence =
 		new THREE.Uniform(2)
@@ -163,7 +169,7 @@ function createGPGPUParticles({ mesh }) {
 	// Init
 	gpgpu.computation.init()
 
-	// Debug
+	// Debug Particles
 	// gpgpu.debug = new THREE.Mesh(
 	// 	new THREE.PlaneGeometry(3, 3),
 	// 	new THREE.MeshBasicMaterial({
@@ -174,6 +180,18 @@ function createGPGPUParticles({ mesh }) {
 	// gpgpu.debug.position.x = 3
 	// gpgpu.debug.visible = false
 	// scene.add(gpgpu.debug)
+
+	// Debug Bone
+	gpgpu.debug = new THREE.Mesh(
+		new THREE.PlaneGeometry(3, 3),
+		new THREE.MeshBasicMaterial({
+			map: gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable)
+				.texture,
+		})
+	)
+	gpgpu.debug.position.x = 3
+	gpgpu.debug.visible = false
+	scene.add(gpgpu.debug)
 
 	// particles
 	// Geometry
@@ -602,6 +620,8 @@ function tic() {
 	if (deer.mixer) {
 		// deer.model.rotation.y += deltaTime
 		deer.mixer.update(deltaTime)
+		// console.log(deer.mesh)
+		// gpgpu.particlesVariable.material.uniforms.uBoneTexture.value = deer.mesh.skeleton.boneTexture
 	}
 
 	if (deer.uniforms) {

@@ -52,17 +52,19 @@ void main()
 	skinned += boneMatW * skinVertex * skinWeight.w;
 
     base.xyz = ( uBindMatrixInverse * skinned ).xyz;
+
     
     // Dead
     if(particle.a >= 1.0)
     {
         particle.a = mod(particle.a, 1.0);
-        particle.xyz = base.xyz * (0.5 + simplexNoise4d(vec4(base.xyz,time * 3.)) * 0.25 );
+        particle.xyz = base.xyz;
+        // particle.xyz = base.xyz * (0.5 + simplexNoise4d(vec4(base.xyz,time * 3.)) * 0.25 );
 
-        particle.y *= 0.8;
-        particle.y += 40.;
-        particle.x *= 1.75;
-        particle.z += 10.;
+        // particle.y *= 0.8;
+        // particle.y += 40.;
+        // particle.x *= 1.75;
+        // particle.z += 10.;
     }
 
     // Alive
