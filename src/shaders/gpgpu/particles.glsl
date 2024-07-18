@@ -5,6 +5,27 @@ uniform float uFlowFieldInfluence;
 uniform float uFlowFieldStrength;
 uniform float uFlowFieldFrequency;
 
+uniform mat4 uBindMatrix;
+uniform mat4 uBindMatrixInverse;
+uniform highp sampler2D uBoneTexture;
+uniform highp sampler2D uSkinIndexTexture;
+uniform highp sampler2D uSkinWeightTexture;
+
+mat4 getBoneMatrix( const in float i ) {
+
+    int size = textureSize( uBoneTexture, 0 ).x;
+    int j = int( i ) * 4;
+    int x = j % size;
+    int y = j / size;
+    vec4 v1 = texelFetch( uBoneTexture, ivec2( x, y ), 0 );
+    vec4 v2 = texelFetch( uBoneTexture, ivec2( x + 1, y ), 0 );
+    vec4 v3 = texelFetch( uBoneTexture, ivec2( x + 2, y ), 0 );
+    vec4 v4 = texelFetch( uBoneTexture, ivec2( x + 3, y ), 0 );
+
+    return mat4( v1, v2, v3, v4 );
+
+}
+
 #include ../includes/simplexNoise4d.glsl
 
 void main()
@@ -13,6 +34,24 @@ void main()
     vec2 uv = gl_FragCoord.xy / resolution.xy;
     vec4 particle = texture(uParticles, uv);
     vec4 base = texture(uBase, uv);
+    vec4 skinIndex = texture(uSkinIndexTexture,uv);
+    vec4 skinWeight = texture(uSkinWeightTexture,uv);
+
+    // none matrix
+    mat4 boneMatX = getBoneMatrix( skinIndex.x );
+	mat4 boneMatY = getBoneMatrix( skinIndex.y );
+	mat4 boneMatZ = getBoneMatrix( skinIndex.z );
+	mat4 boneMatW = getBoneMatrix( skinIndex.w );
+
+    vec4 skinVertex = uBindMatrix * vec4( base.xyz, 1.0 );
+
+    vec4 skinned = vec4( 0.0 );
+	skinned += boneMatX * skinVertex * skinWeight.x;
+	skinned += boneMatY * skinVertex * skinWeight.y;
+	skinned += boneMatZ * skinVertex * skinWeight.z;
+	skinned += boneMatW * skinVertex * skinWeight.w;
+
+    base.xyz = ( uBindMatrixInverse * skinned ).xyz;
     
     // Dead
     if(particle.a >= 1.0)

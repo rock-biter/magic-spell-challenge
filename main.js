@@ -87,6 +87,8 @@ function createGPGPUParticles({ mesh }) {
 
 	// Base particles
 	const baseParticlesTexture = gpgpu.computation.createTexture()
+	const skinIndexTexture = gpgpu.computation.createTexture()
+	const skinWeightTexture = gpgpu.computation.createTexture()
 
 	for (let i = 0; i < count; i++) {
 		const i3 = i * 3
@@ -100,6 +102,24 @@ function createGPGPUParticles({ mesh }) {
 		baseParticlesTexture.image.data[i4 + 2] =
 			geometry.attributes.position.array[i3 + 2]
 		baseParticlesTexture.image.data[i4 + 3] = Math.random()
+
+		skinIndexTexture.image.data[i4 + 0] =
+			geometry.attributes.skinIndex.array[i4 + 0]
+		skinIndexTexture.image.data[i4 + 1] =
+			geometry.attributes.skinIndex.array[i4 + 1]
+		skinIndexTexture.image.data[i4 + 2] =
+			geometry.attributes.skinIndex.array[i4 + 2]
+		skinIndexTexture.image.data[i4 + 3] =
+			geometry.attributes.skinIndex.array[i4 + 3]
+
+		skinWeightTexture.image.data[i4 + 0] =
+			geometry.attributes.skinWeight.array[i4 + 0]
+		skinWeightTexture.image.data[i4 + 1] =
+			geometry.attributes.skinWeight.array[i4 + 1]
+		skinWeightTexture.image.data[i4 + 2] =
+			geometry.attributes.skinWeight.array[i4 + 2]
+		skinWeightTexture.image.data[i4 + 3] =
+			geometry.attributes.skinWeight.array[i4 + 3]
 	}
 
 	// Particles variable
@@ -118,6 +138,21 @@ function createGPGPUParticles({ mesh }) {
 	gpgpu.particlesVariable.material.uniforms.uBase = new THREE.Uniform(
 		baseParticlesTexture
 	)
+
+	// add skinned uniform
+	gpgpu.particlesVariable.material.uniforms.uBindMatrix = new THREE.Uniform(
+		mesh.bindMatrix
+	)
+	gpgpu.particlesVariable.material.uniforms.uBindMatrixInverse =
+		new THREE.Uniform(mesh.bindMatrixInverse)
+
+	gpgpu.particlesVariable.material.uniforms.uSkinIndexTexture =
+		new THREE.Uniform(skinIndexTexture)
+
+	gpgpu.particlesVariable.material.uniforms.uSkinWeightTexture =
+		new THREE.Uniform(skinWeightTexture)
+
+	// add uniforms params
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence =
 		new THREE.Uniform(2)
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength =
@@ -245,7 +280,7 @@ function patronum(material) {
 	// console.log(material.roughnessMap, material.metalnessMap)
 
 	material.onBeforeCompile = (shader) => {
-		// console.log(shader.vertexShader)
+		console.log(shader.vertexShader)
 		// console.log(`
 		// 	------
 		// 	`)
@@ -438,9 +473,9 @@ const camera = new THREE.PerspectiveCamera(
 	fov,
 	sizes.width / sizes.height,
 	0.01,
-	200
+	5000
 )
-camera.position.set(7, 7, 10)
+camera.position.set(200, 200, 200)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
 /**
