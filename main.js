@@ -8,6 +8,7 @@ import * as dat from 'lil-gui'
 import {
 	GLTFLoader,
 	GPUComputationRenderer,
+	ShaderPass,
 } from 'three/examples/jsm/Addons.js'
 import simplexNoise4D from './src/shaders/simplex-noise-4d.glsl'
 import particlesVertexShader from './src/shaders/particles/vertex.glsl'
@@ -17,6 +18,11 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+
+import Stats from 'three/addons/libs/stats.module.js'
+
+const stats = new Stats()
+document.body.appendChild(stats.dom)
 
 const loadingManager = new THREE.LoadingManager()
 const gltfLoader = new GLTFLoader(loadingManager)
@@ -356,7 +362,7 @@ function patronum(material) {
 
 			diffuseColor.a = patronum * text * textBig;
 
-			diffuseColor *= 2.;
+			diffuseColor *= 2.5;
 			
 			
 			`
@@ -489,16 +495,29 @@ const bloomPass = new UnrealBloomPass(
 	0.4,
 	0.85
 )
+
 bloomPass.threshold = debugObject.threshold
 bloomPass.strength = debugObject.strength
 bloomPass.radius = debugObject.radius
 
 const outputPass = new OutputPass()
 
-const composer = new EffectComposer(renderer)
+const composer = new EffectComposer(
+	renderer,
+	new THREE.WebGLRenderTarget(
+		sizes.width * sizes.pixelRatio,
+		sizes.height * sizes.pixelRatio,
+		{ type: THREE.HalfFloatType, samples: 1 }
+	)
+)
+
 composer.addPass(renderScene)
 composer.addPass(bloomPass) // this create a glitch (why??)
 composer.addPass(outputPass)
+
+// const effect1 = new ShaderPass(DotScreenShader)
+// effect1.uniforms['scale'].value = 4
+// composer.addPass(effect1)
 
 const bloomFolder = gui.addFolder('bloom')
 
@@ -564,6 +583,8 @@ function tic() {
 			gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable).texture
 	}
 
+	stats.update()
+
 	// renderer.render(scene, camera)
 	composer.render()
 
@@ -597,4 +618,5 @@ function handleResize() {
 
 	renderer.setPixelRatio(sizes.pixelRatio)
 	composer.setPixelRatio(sizes.pixelRatio)
+	// composer.reset()
 }
