@@ -240,7 +240,7 @@ function createGPGPUParticles({ mesh }) {
 		vertexShader: particlesVertexShader,
 		fragmentShader: particlesFragmentShader,
 		uniforms: {
-			uSize: new THREE.Uniform(0.055),
+			uSize: new THREE.Uniform(0.065),
 			uResolution: new THREE.Uniform(
 				new THREE.Vector2(
 					sizes.width * sizes.pixelRatio,
@@ -501,7 +501,7 @@ const camera = new THREE.PerspectiveCamera(
 	0.01,
 	5000
 )
-camera.position.set(7, 7, 10)
+camera.position.set(12, 12, 17)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
 /**

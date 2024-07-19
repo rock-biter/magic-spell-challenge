@@ -60,6 +60,8 @@ void main()
     {
         particle.a = mod(particle.a, 1.0);
         particle.xyz = base.xyz;
+        particle.x += sin(uTime * 1. + particle.x) * 0.2;
+        particle.y += cos(uTime * 1. + particle.y) * 0.2;
         // particle.y += 25.;
         // particle.xyz = base.xyz * (0.5 + simplexNoise4d(vec4(base.xyz,time * 3.)) * 0.25 );
 
@@ -79,19 +81,20 @@ void main()
 
         // Flow field
         vec3 flowField = vec3(
-            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 2. + 0.0, time * 1.)),
+            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 0.0, time * 1.)),
             simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 1.0, time * 1.)),
-            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 2.0, time * 1.))
+            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 2.0, time * 0.5))
         );
-        flowField = normalize(flowField);
-        flowField.z = -abs(flowField.z * 2.5);
+        flowField = normalize(flowField) * 0.5;
+        flowField.z = -abs(flowField.z * 6.);
         particle.xyz += flowField * uDeltaTime * uFlowFieldStrength * uFlowFieldInfluence;
+        
         // particle.z += -0.2;
         // particle.z += uDeltaTime * 1.;
 
         // Decay
         // particle.a += uDeltaTime * 0.3;
-        particle.a += uDeltaTime * 0.5;
+        particle.a += uDeltaTime * 0.3;
     }
     
     gl_FragColor = particle;
