@@ -21,6 +21,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 import Stats from 'three/addons/libs/stats.module.js'
 import { Matrix4 } from 'three'
+import { LoopOnce } from 'three'
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -32,6 +33,7 @@ const deer = {
 	model: null,
 	material: null,
 	uniforms: null,
+	animations: {},
 }
 
 const debugObject = {
@@ -69,9 +71,111 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	console.log('matrix', matrix)
 
 	deer.mixer = new THREE.AnimationMixer(gltf.scene)
+	console.log(gltf.animations)
 	const runJump = deer.mixer.clipAction(gltf.animations[98])
+	deer.animations.runJump = runJump
+	// runJump.setLoop(false)
+	deer.animations.runFront = deer.mixer.clipAction(gltf.animations[43])
 
-	runJump.play()
+	deer.animations.idle2 = deer.mixer.clipAction(gltf.animations[19])
+
+	// deer.animations.runFront.play()
+	// deer.animations.runFront.clampWhenFinished = true
+	// deer.animations.runJump.clampWhenFinished = true
+
+	// jump
+
+	// deer.animations.jumpStart = deer.mixer
+	// 	.clipAction(gltf.animations[32])
+	// 	.setLoop(THREE.LoopOnce, 1)
+	// deer.animations.jumpUp = deer.mixer
+	// 	.clipAction(gltf.animations[35])
+	// 	.setLoop(LoopOnce, 1)
+	// deer.animations.jumpHoriz = deer.mixer
+	// 	.clipAction(gltf.animations[31])
+	// 	.setLoop(LoopOnce, 1)
+	// deer.animations.jumpDown = deer.mixer
+	// 	.clipAction(gltf.animations[25])
+	// 	.setLoop(LoopOnce, 1)
+	// deer.animations.jumpEnd = deer.mixer
+	// 	.clipAction(gltf.animations[28])
+	// 	.setLoop(LoopOnce, 1)
+
+	// deer.animations.jumpStart.play()
+	// deer.animations.jumpUp.play()
+
+	// deer.animations.jumpHoriz.play()
+	// deer.animations.jumpDown.play()
+	// deer.animations.jumpEnd.play()
+
+	let action = deer.animations.runFront
+
+	action.play()
+
+	// setInterval(() => {
+	// 	if (action === deer.animations.runFront) {
+	// 		action.crossFadeTo(deer.animations.runJump, 0.25, true)
+	// 		action = deer.animations.runJump
+	// 		// deer.animations.runJump.reset()
+	// 	} else {
+	// 		action.crossFadeTo(deer.animations.runFront, 0.25, true)
+	// 		action = deer.animations.runFront
+	// 		// deer.animations.runFront.reset()
+	// 	}
+	// 	action.reset()
+	// 	action.play()
+	// }, 5000)
+
+	// deer.mixer.addEventListener('finished', (e) => {
+	// 	console.log('finished', e)
+
+	// 	const animName = e.action._clip.name
+
+	// 	console.log(action)
+
+	// 	if (animName === action._clip.name) {
+	// 		action.reset()
+	// 		action.play()
+	// 	} else {
+	// 		action.reset()
+	// 		action.play()
+	// 		action.crossFadeFrom(e.action, 0.5, true)
+	// 	}
+
+	// 	// switch (animName) {
+	// 	// 	case 'Arm_Deer|Jump_start_IP':
+	// 	// 		deer.animations.jumpUp.clampWhenFinished = true
+	// 	// 		deer.animations.jumpUp.play()
+	// 	// 		deer.animations.jumpDown.play()
+	// 	// 		deer.animations.jumpDown.crossFadeFrom(
+	// 	// 			deer.animations.jumpUp,
+	// 	// 			0.3,
+	// 	// 			true
+	// 	// 		)
+
+	// 	// 		// // deer.animations.jumpEnd.play()
+	// 	// 		deer.animations.jumpDown.clampWhenFinished = true
+
+	// 	// 	case 'Arm_Deer|Jump_down_low':
+	// 	// 		deer.animations.jumpEnd.play()
+	// 	// 		break
+	// 	// }
+	// })
+
+	// setTimeout(() => {
+	// 	console.log('cross fade to run')
+	// 	// deer.animations.runJum.crossFadeTo(deer.animations.runFront, 0.5,true)
+	// 	// deer.animations.runFront.time = 0
+	// 	// deer.animations.runFront.enabled = true
+	// 	// deer.animations.runFront.setEffectiveTimeScale(1)
+	// 	// deer.animations.runFront.setEffectiveWeight(1)
+	// 	// deer.animations.runFront.crossFadeFrom(deer.animations.runJum, 0.5, true)
+	// 	// deer.animations.runFront.play()
+
+	// 	// deer.animations.idle2.play()
+	// }, 3000)
+
+	// runJump.play()
 
 	gpgpu.particlesVariable.material.uniforms.uModelMatrix.value =
 		deer.mesh.matrixWorld
@@ -239,6 +343,7 @@ function createGPGPUParticles({ mesh }) {
 	particles.material = new THREE.ShaderMaterial({
 		vertexShader: particlesVertexShader,
 		fragmentShader: particlesFragmentShader,
+		transparent: true,
 		uniforms: {
 			uSize: new THREE.Uniform(0.065),
 			uResolution: new THREE.Uniform(
