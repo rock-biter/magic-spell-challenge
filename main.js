@@ -11,6 +11,7 @@ import {
 	ShaderPass,
 } from 'three/examples/jsm/Addons.js'
 import simplexNoise4D from './src/shaders/simplex-noise-4d.glsl'
+import rotateMat3 from './src/shaders/rotate-mat-3.glsl'
 import particlesVertexShader from './src/shaders/particles/vertex.glsl'
 import particlesFragmentShader from './src/shaders/particles/fragment.glsl'
 import gpgpuParticlesShader from './src/shaders/gpgpu/particles.glsl'
@@ -22,6 +23,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import Stats from 'three/addons/libs/stats.module.js'
 import { Matrix4 } from 'three'
 import { LoopOnce } from 'three'
+import gsap from 'gsap'
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -41,6 +43,7 @@ const debugObject = {
 	strength: 0.4,
 	radius: 0,
 	exposure: 1.25,
+	intro: 1,
 }
 
 gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
@@ -421,6 +424,15 @@ function patronum(material) {
 		shader.uniforms.uCamera = new THREE.Uniform(new THREE.Vector3(0, 0, 0))
 		shader.uniforms.uColor = new THREE.Uniform(new THREE.Color(0x70e2ff))
 		shader.uniforms.uTime = new THREE.Uniform(0)
+		shader.uniforms.uIntro = new THREE.Uniform(configs.intro)
+
+		window.addEventListener('click', () => {
+			gsap.to(deer.uniforms.uIntro, {
+				value: 1,
+				duration: 3,
+				ease: 'power4.out',
+			})
+		})
 
 		let token = '#include <common>'
 
@@ -429,9 +441,11 @@ function patronum(material) {
 			/*glsl*/ `
 			#include <common>
 			${simplexNoise4D}
+			${rotateMat3}
 			uniform vec3 uCamera;
 			uniform vec3 uColor;			
 			uniform float uTime;
+			uniform float uIntro;
 			varying vec3 vPosition;			
 			varying vec3 vBasePosition;
 			varying vec3 vN;
@@ -447,6 +461,7 @@ function patronum(material) {
 			uniform vec3 uCamera;
 			uniform vec3 uColor;			
 			uniform float uTime;
+			uniform float uIntro;
 			varying vec3 vPosition;			
 			varying vec3 vBasePosition;
 			varying vec3 vN;
@@ -483,8 +498,28 @@ function patronum(material) {
 				mvPosition = instanceMatrix * mvPosition;
 
 			#endif
-
+			
 			mvPosition = modelMatrix * mvPosition;
+			// vPosition = mvPosition.xyz;
+			
+			float inverseIntro = (1. - uIntro);
+			// mvPosition.y += inverseIntro * 3.;
+			mvPosition.y -= 5.;
+			mvPosition.z -= 4.3;
+			// mvPosition.y += sin(mvPosition.z * 3. + uTime) * inverseIntro;
+
+			float angle = (  2. + 1.5 * mvPosition.z) * 3.14 * smoothstep(0.8,0.,uIntro);
+
+			mvPosition.xyz = rotationMatrix(vec3(0,0,1), angle) * mvPosition.xyz;
+			mvPosition.xyz = rotationMatrix(vec3(0,1,0), angle) * mvPosition.xyz;
+			mvPosition.xyz = rotationMatrix(vec3(1,0,0), -angle) * mvPosition.xyz;
+			float n = pow(uIntro,1.5) * (1. + inverseIntro * snoise(vec4(mvPosition.xyz * 0.1,uTime)) * 2.5);
+			mvPosition.xyz *= n;
+			// float z = mvPosition.z;
+
+			mvPosition.y += 5.;
+			mvPosition.z += 4.3;
+
 			vPosition = mvPosition.xyz;
 			vBasePosition = vec4(modelMatrix * vec4(position,1.)).xyz;
 
@@ -526,7 +561,7 @@ function patronum(material) {
 
 			textBig = pow(textBig,1.) + 0.3;
 
-			diffuseColor.a = patronum * text * textBig;
+			diffuseColor.a = patronum * text * textBig * smoothstep(0.05,0.7,pow(uIntro,2.));
 
 			diffuseColor *= 2.5;
 			
@@ -551,9 +586,12 @@ function patronum(material) {
 const configs = {
 	example: 5,
 	baseColor: 0x70e2ff,
+	intro: 0,
 }
 const gui = new dat.GUI()
-gui.add(configs, 'example', 0, 10, 0.1).onChange((val) => console.log(val))
+gui
+	.add(configs, 'intro', 0, 1, 0.01)
+	.onChange((val) => (deer.uniforms.uIntro.value = val))
 
 gui.addColor(configs, 'baseColor').onChange((val) => {
 	console.log(val)
