@@ -20,6 +20,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 import Stats from 'three/addons/libs/stats.module.js'
+import { Matrix4 } from 'three'
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -45,6 +46,8 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	deer.model.scale.setScalar(0.075)
 	scene.add(deer.model)
 
+	const matrix = new Matrix4()
+
 	deer.model.traverse((el) => {
 		if (el instanceof THREE.Mesh) {
 			// el.material = new THREE.MeshStandardMaterial({
@@ -53,6 +56,8 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 			// })
 			const mat = el.material
 			deer.material = mat
+			deer.mesh = el
+			console.log(deer.mesh, gltf.scene)
 
 			patronum(mat)
 
@@ -60,12 +65,17 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 		}
 	})
 
+	deer.matrix = matrix
+	console.log('matrix', matrix)
+
 	deer.mixer = new THREE.AnimationMixer(gltf.scene)
 	const runJump = deer.mixer.clipAction(gltf.animations[98])
 
 	runJump.play()
 
-	console.log(deer.model, gltf)
+	gpgpu.particlesVariable.material.uniforms.uModelMatrix.value =
+		deer.mesh.matrixWorld
+	// console.log(deer.model, gltf)
 })
 
 const gpgpu = {}
@@ -87,6 +97,9 @@ function createGPGPUParticles({ mesh }) {
 
 	// Base particles
 	const baseParticlesTexture = gpgpu.computation.createTexture()
+	const skinIndexTexture = gpgpu.computation.createTexture()
+	const skinWeightTexture = gpgpu.computation.createTexture()
+	const boneTexture = gpgpu.computation.createTexture()
 
 	for (let i = 0; i < count; i++) {
 		const i3 = i * 3
@@ -100,6 +113,24 @@ function createGPGPUParticles({ mesh }) {
 		baseParticlesTexture.image.data[i4 + 2] =
 			geometry.attributes.position.array[i3 + 2]
 		baseParticlesTexture.image.data[i4 + 3] = Math.random()
+
+		skinIndexTexture.image.data[i4 + 0] =
+			geometry.attributes.skinIndex.array[i4 + 0]
+		skinIndexTexture.image.data[i4 + 1] =
+			geometry.attributes.skinIndex.array[i4 + 1]
+		skinIndexTexture.image.data[i4 + 2] =
+			geometry.attributes.skinIndex.array[i4 + 2]
+		skinIndexTexture.image.data[i4 + 3] =
+			geometry.attributes.skinIndex.array[i4 + 3]
+
+		skinWeightTexture.image.data[i4 + 0] =
+			geometry.attributes.skinWeight.array[i4 + 0]
+		skinWeightTexture.image.data[i4 + 1] =
+			geometry.attributes.skinWeight.array[i4 + 1]
+		skinWeightTexture.image.data[i4 + 2] =
+			geometry.attributes.skinWeight.array[i4 + 2]
+		skinWeightTexture.image.data[i4 + 3] =
+			geometry.attributes.skinWeight.array[i4 + 3]
 	}
 
 	// Particles variable
@@ -118,17 +149,35 @@ function createGPGPUParticles({ mesh }) {
 	gpgpu.particlesVariable.material.uniforms.uBase = new THREE.Uniform(
 		baseParticlesTexture
 	)
+
+	// add skinned uniform
+	gpgpu.particlesVariable.material.uniforms.uBindMatrix = new THREE.Uniform(
+		mesh.bindMatrix
+	)
+	gpgpu.particlesVariable.material.uniforms.uBindMatrixInverse =
+		new THREE.Uniform(mesh.bindMatrixInverse)
+
+	gpgpu.particlesVariable.material.uniforms.uSkinIndexTexture =
+		new THREE.Uniform(skinIndexTexture)
+
+	gpgpu.particlesVariable.material.uniforms.uSkinWeightTexture =
+		new THREE.Uniform(skinWeightTexture)
+
+	gpgpu.particlesVariable.material.uniforms.uBoneTexture = new THREE.Uniform()
+	gpgpu.particlesVariable.material.uniforms.uModelMatrix = new THREE.Uniform()
+
+	// add uniforms params
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence =
 		new THREE.Uniform(2)
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength =
-		new THREE.Uniform(20)
+		new THREE.Uniform(7.9)
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency =
-		new THREE.Uniform(0.0035)
+		new THREE.Uniform(0.04)
 
 	// Init
 	gpgpu.computation.init()
 
-	// Debug
+	// Debug Particles
 	// gpgpu.debug = new THREE.Mesh(
 	// 	new THREE.PlaneGeometry(3, 3),
 	// 	new THREE.MeshBasicMaterial({
@@ -139,6 +188,18 @@ function createGPGPUParticles({ mesh }) {
 	// gpgpu.debug.position.x = 3
 	// gpgpu.debug.visible = false
 	// scene.add(gpgpu.debug)
+
+	// Debug Bone
+	gpgpu.debug = new THREE.Mesh(
+		new THREE.PlaneGeometry(3, 3),
+		new THREE.MeshBasicMaterial({
+			map: gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable)
+				.texture,
+		})
+	)
+	gpgpu.debug.position.x = 3
+	gpgpu.debug.visible = false
+	scene.add(gpgpu.debug)
 
 	// particles
 	// Geometry
@@ -193,7 +254,7 @@ function createGPGPUParticles({ mesh }) {
 
 	// Points
 	particles.points = new THREE.Points(particles.geometry, particles.material)
-	particles.points.scale.setScalar(0.075)
+	// particles.points.scale.setScalar(0.075)
 	particles.points.frustumCulled = false
 	scene.add(particles.points)
 
@@ -245,7 +306,7 @@ function patronum(material) {
 	// console.log(material.roughnessMap, material.metalnessMap)
 
 	material.onBeforeCompile = (shader) => {
-		// console.log(shader.vertexShader)
+		console.log(shader.vertexShader)
 		// console.log(`
 		// 	------
 		// 	`)
@@ -438,7 +499,7 @@ const camera = new THREE.PerspectiveCamera(
 	fov,
 	sizes.width / sizes.height,
 	0.01,
-	200
+	5000
 )
 camera.position.set(7, 7, 10)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
@@ -566,7 +627,16 @@ function tic() {
 
 	if (deer.mixer) {
 		// deer.model.rotation.y += deltaTime
+		// console.log(deer.mixer._actions)
 		deer.mixer.update(deltaTime)
+		// console.log(deer.mesh)
+		gpgpu.particlesVariable.material.uniforms.uBoneTexture.value =
+			deer.mesh.skeleton.boneTexture
+
+		// console.log('boneT', deer.mesh.skeleton.boneTexture)
+		// if (deer.mesh.skeleton.boneTexture) {
+		// 	deer.mesh.skeleton.boneTexture
+		// }
 	}
 
 	if (deer.uniforms) {
