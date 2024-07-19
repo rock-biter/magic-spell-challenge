@@ -4,12 +4,13 @@ uniform sampler2D uBase;
 uniform float uFlowFieldInfluence;
 uniform float uFlowFieldStrength;
 uniform float uFlowFieldFrequency;
+uniform mat4 uModelMatrix;
 
 uniform mat4 uBindMatrix;
 uniform mat4 uBindMatrixInverse;
-uniform highp sampler2D uBoneTexture;
-uniform highp sampler2D uSkinIndexTexture;
-uniform highp sampler2D uSkinWeightTexture;
+uniform sampler2D uBoneTexture;
+uniform sampler2D uSkinIndexTexture;
+uniform sampler2D uSkinWeightTexture;
 
 mat4 getBoneMatrix( const in float i ) {
 
@@ -51,7 +52,7 @@ void main()
 	skinned += boneMatZ * skinVertex * skinWeight.z;
 	skinned += boneMatW * skinVertex * skinWeight.w;
 
-    base.xyz = ( uBindMatrixInverse * skinned ).xyz;
+    base.xyz = ( uModelMatrix * uBindMatrixInverse * skinned ).xyz;
 
     
     // Dead
@@ -59,6 +60,7 @@ void main()
     {
         particle.a = mod(particle.a, 1.0);
         particle.xyz = base.xyz;
+        // particle.y += 25.;
         // particle.xyz = base.xyz * (0.5 + simplexNoise4d(vec4(base.xyz,time * 3.)) * 0.25 );
 
         // particle.y *= 0.8;
@@ -77,17 +79,19 @@ void main()
 
         // Flow field
         vec3 flowField = vec3(
-            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 3. + 0.0, time * 1.)),
+            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 2. + 0.0, time * 1.)),
             simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 1.0, time * 1.)),
-            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 3. + 2.0, time * 1.))
+            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 2.0, time * 1.))
         );
         flowField = normalize(flowField);
-        flowField.z = -abs(flowField.z * 10.);
+        flowField.z = -abs(flowField.z * 2.5);
         particle.xyz += flowField * uDeltaTime * uFlowFieldStrength * uFlowFieldInfluence;
+        // particle.z += -0.2;
         // particle.z += uDeltaTime * 1.;
 
         // Decay
-        particle.a += uDeltaTime * 0.3;
+        // particle.a += uDeltaTime * 0.3;
+        particle.a += uDeltaTime * 0.5;
     }
     
     gl_FragColor = particle;

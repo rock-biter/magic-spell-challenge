@@ -20,6 +20,7 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 import Stats from 'three/addons/libs/stats.module.js'
+import { Matrix4 } from 'three'
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -45,6 +46,8 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	deer.model.scale.setScalar(0.075)
 	scene.add(deer.model)
 
+	const matrix = new Matrix4()
+
 	deer.model.traverse((el) => {
 		if (el instanceof THREE.Mesh) {
 			// el.material = new THREE.MeshStandardMaterial({
@@ -54,7 +57,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 			const mat = el.material
 			deer.material = mat
 			deer.mesh = el
-			console.log(deer.mesh)
+			console.log(deer.mesh, gltf.scene)
 
 			patronum(mat)
 
@@ -62,11 +65,16 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 		}
 	})
 
+	deer.matrix = matrix
+	console.log('matrix', matrix)
+
 	deer.mixer = new THREE.AnimationMixer(gltf.scene)
 	const runJump = deer.mixer.clipAction(gltf.animations[98])
 
 	runJump.play()
 
+	gpgpu.particlesVariable.material.uniforms.uModelMatrix.value =
+		deer.mesh.matrixWorld
 	// console.log(deer.model, gltf)
 })
 
@@ -91,6 +99,7 @@ function createGPGPUParticles({ mesh }) {
 	const baseParticlesTexture = gpgpu.computation.createTexture()
 	const skinIndexTexture = gpgpu.computation.createTexture()
 	const skinWeightTexture = gpgpu.computation.createTexture()
+	const boneTexture = gpgpu.computation.createTexture()
 
 	for (let i = 0; i < count; i++) {
 		const i3 = i * 3
@@ -154,17 +163,16 @@ function createGPGPUParticles({ mesh }) {
 	gpgpu.particlesVariable.material.uniforms.uSkinWeightTexture =
 		new THREE.Uniform(skinWeightTexture)
 
-	gpgpu.particlesVariable.material.uniforms.uBoneTexture = new THREE.Uniform(
-		mesh.skeleton.boneTexture
-	)
+	gpgpu.particlesVariable.material.uniforms.uBoneTexture = new THREE.Uniform()
+	gpgpu.particlesVariable.material.uniforms.uModelMatrix = new THREE.Uniform()
 
 	// add uniforms params
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence =
 		new THREE.Uniform(2)
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength =
-		new THREE.Uniform(20)
+		new THREE.Uniform(7.9)
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency =
-		new THREE.Uniform(0.0035)
+		new THREE.Uniform(0.04)
 
 	// Init
 	gpgpu.computation.init()
@@ -246,7 +254,7 @@ function createGPGPUParticles({ mesh }) {
 
 	// Points
 	particles.points = new THREE.Points(particles.geometry, particles.material)
-	particles.points.scale.setScalar(0.075)
+	// particles.points.scale.setScalar(0.075)
 	particles.points.frustumCulled = false
 	scene.add(particles.points)
 
@@ -493,7 +501,7 @@ const camera = new THREE.PerspectiveCamera(
 	0.01,
 	5000
 )
-camera.position.set(200, 200, 200)
+camera.position.set(7, 7, 10)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
 /**
@@ -619,9 +627,16 @@ function tic() {
 
 	if (deer.mixer) {
 		// deer.model.rotation.y += deltaTime
+		// console.log(deer.mixer._actions)
 		deer.mixer.update(deltaTime)
 		// console.log(deer.mesh)
-		// gpgpu.particlesVariable.material.uniforms.uBoneTexture.value = deer.mesh.skeleton.boneTexture
+		gpgpu.particlesVariable.material.uniforms.uBoneTexture.value =
+			deer.mesh.skeleton.boneTexture
+
+		// console.log('boneT', deer.mesh.skeleton.boneTexture)
+		// if (deer.mesh.skeleton.boneTexture) {
+		// 	deer.mesh.skeleton.boneTexture
+		// }
 	}
 
 	if (deer.uniforms) {
