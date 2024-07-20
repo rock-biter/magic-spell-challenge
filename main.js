@@ -44,7 +44,7 @@ const debugObject = {
 	threshold: 0.33,
 	strength: 0.4,
 	radius: 0,
-	exposure: 1.25,
+	exposure: 1.15,
 	intro: 1,
 }
 
@@ -414,7 +414,7 @@ function createGPGPUParticles({ mesh }) {
 		new THREE.Uniform(2.2) //7.9
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency =
 		new THREE.Uniform(2) //0.04
-	gpgpu.particlesVariable.material.uniforms.uLife = new THREE.Uniform(3) //0.04
+	gpgpu.particlesVariable.material.uniforms.uLife = new THREE.Uniform(0.4) //0.04
 
 	// Init
 	gpgpu.computation.init()
@@ -485,7 +485,7 @@ function createGPGPUParticles({ mesh }) {
 		// blending: AdditiveBlending,
 		depthWrite: false,
 		uniforms: {
-			uSize: new THREE.Uniform(0.04),
+			uSize: new THREE.Uniform(0.03),
 			// uSize: new THREE.Uniform(0.0),
 			uIntro: new THREE.Uniform(0),
 			uResolution: new THREE.Uniform(
@@ -589,12 +589,12 @@ function patronum(material) {
 			ease: 'power2.inOut',
 		})
 
-		// gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-		// 	value: 3,
-		// 	duration: 0.5,
-		// 	ease: 'power2.inOut',
-		// 	delay: 1,
-		// })
+		gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+			value: 3,
+			duration: 1,
+			ease: 'power2.inOut',
+			delay: 2,
+		})
 
 		// gsap.to(particles.material.uniforms.uSize, {
 		// 	value: 0.2,
@@ -818,15 +818,15 @@ const camera = new THREE.PerspectiveCamera(
 	0.01,
 	5000
 )
-camera.position.set(12, 12, 17)
+camera.position.set(15, 15, 17)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
 /**
  * Show the axes of coordinates system
  */
 // __helper_axes__
-const axesHelper = new THREE.AxesHelper(1)
-scene.add(axesHelper)
+// const axesHelper = new THREE.AxesHelper(1)
+// scene.add(axesHelper)
 
 /**
  * renderer
@@ -846,8 +846,8 @@ document.body.appendChild(renderer.domElement)
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.target.set(0, 4, 0)
 controls.enableDamping = true
-// controls.autoRotate = true
-controls.autoRotateSpeed = 3
+controls.autoRotate = true
+controls.autoRotateSpeed = 1
 
 /**
  * Lights
