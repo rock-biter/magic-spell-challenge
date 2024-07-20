@@ -8,6 +8,7 @@ attribute vec2 aParticlesUv;
 attribute float aSize;
 
 varying vec3 vColor;
+varying float alpha;
 
 void main()
 {
@@ -25,6 +26,7 @@ void main()
     float size = min(sizeIn, sizeOut);
 
     gl_PointSize = size * aSize * uSize * uResolution.y;
+    alpha = size;
     gl_PointSize *= (1.0 / - viewPosition.z);
 
     // Varyings

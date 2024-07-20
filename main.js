@@ -11,6 +11,7 @@ import {
 	ShaderPass,
 } from 'three/examples/jsm/Addons.js'
 import simplexNoise4D from './src/shaders/simplex-noise-4d.glsl'
+import rotateMat3 from './src/shaders/rotate-mat-3.glsl'
 import particlesVertexShader from './src/shaders/particles/vertex.glsl'
 import particlesFragmentShader from './src/shaders/particles/fragment.glsl'
 import gpgpuParticlesShader from './src/shaders/gpgpu/particles.glsl'
@@ -21,6 +22,8 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
 import Stats from 'three/addons/libs/stats.module.js'
 import { Matrix4 } from 'three'
+import { LoopOnce } from 'three'
+import gsap from 'gsap'
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -32,6 +35,7 @@ const deer = {
 	model: null,
 	material: null,
 	uniforms: null,
+	animations: {},
 }
 
 const debugObject = {
@@ -39,6 +43,7 @@ const debugObject = {
 	strength: 0.4,
 	radius: 0,
 	exposure: 1.25,
+	intro: 1,
 }
 
 gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
@@ -69,9 +74,111 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	console.log('matrix', matrix)
 
 	deer.mixer = new THREE.AnimationMixer(gltf.scene)
+	console.log(gltf.animations)
 	const runJump = deer.mixer.clipAction(gltf.animations[98])
+	deer.animations.runJump = runJump
+	// runJump.setLoop(false)
+	deer.animations.runFront = deer.mixer.clipAction(gltf.animations[43])
 
-	runJump.play()
+	deer.animations.idle2 = deer.mixer.clipAction(gltf.animations[19])
+
+	// deer.animations.runFront.play()
+	// deer.animations.runFront.clampWhenFinished = true
+	// deer.animations.runJump.clampWhenFinished = true
+
+	// jump
+
+	// deer.animations.jumpStart = deer.mixer
+	// 	.clipAction(gltf.animations[32])
+	// 	.setLoop(THREE.LoopOnce, 1)
+	// deer.animations.jumpUp = deer.mixer
+	// 	.clipAction(gltf.animations[35])
+	// 	.setLoop(LoopOnce, 1)
+	// deer.animations.jumpHoriz = deer.mixer
+	// 	.clipAction(gltf.animations[31])
+	// 	.setLoop(LoopOnce, 1)
+	// deer.animations.jumpDown = deer.mixer
+	// 	.clipAction(gltf.animations[25])
+	// 	.setLoop(LoopOnce, 1)
+	// deer.animations.jumpEnd = deer.mixer
+	// 	.clipAction(gltf.animations[28])
+	// 	.setLoop(LoopOnce, 1)
+
+	// deer.animations.jumpStart.play()
+	// deer.animations.jumpUp.play()
+
+	// deer.animations.jumpHoriz.play()
+	// deer.animations.jumpDown.play()
+	// deer.animations.jumpEnd.play()
+
+	let action = deer.animations.runFront
+
+	action.play()
+
+	// setInterval(() => {
+	// 	if (action === deer.animations.runFront) {
+	// 		action.crossFadeTo(deer.animations.runJump, 0.25, true)
+	// 		action = deer.animations.runJump
+	// 		// deer.animations.runJump.reset()
+	// 	} else {
+	// 		action.crossFadeTo(deer.animations.runFront, 0.25, true)
+	// 		action = deer.animations.runFront
+	// 		// deer.animations.runFront.reset()
+	// 	}
+	// 	action.reset()
+	// 	action.play()
+	// }, 5000)
+
+	// deer.mixer.addEventListener('finished', (e) => {
+	// 	console.log('finished', e)
+
+	// 	const animName = e.action._clip.name
+
+	// 	console.log(action)
+
+	// 	if (animName === action._clip.name) {
+	// 		action.reset()
+	// 		action.play()
+	// 	} else {
+	// 		action.reset()
+	// 		action.play()
+	// 		action.crossFadeFrom(e.action, 0.5, true)
+	// 	}
+
+	// 	// switch (animName) {
+	// 	// 	case 'Arm_Deer|Jump_start_IP':
+	// 	// 		deer.animations.jumpUp.clampWhenFinished = true
+	// 	// 		deer.animations.jumpUp.play()
+	// 	// 		deer.animations.jumpDown.play()
+	// 	// 		deer.animations.jumpDown.crossFadeFrom(
+	// 	// 			deer.animations.jumpUp,
+	// 	// 			0.3,
+	// 	// 			true
+	// 	// 		)
+
+	// 	// 		// // deer.animations.jumpEnd.play()
+	// 	// 		deer.animations.jumpDown.clampWhenFinished = true
+
+	// 	// 	case 'Arm_Deer|Jump_down_low':
+	// 	// 		deer.animations.jumpEnd.play()
+	// 	// 		break
+	// 	// }
+	// })
+
+	// setTimeout(() => {
+	// 	console.log('cross fade to run')
+	// 	// deer.animations.runJum.crossFadeTo(deer.animations.runFront, 0.5,true)
+	// 	// deer.animations.runFront.time = 0
+	// 	// deer.animations.runFront.enabled = true
+	// 	// deer.animations.runFront.setEffectiveTimeScale(1)
+	// 	// deer.animations.runFront.setEffectiveWeight(1)
+	// 	// deer.animations.runFront.crossFadeFrom(deer.animations.runJum, 0.5, true)
+	// 	// deer.animations.runFront.play()
+
+	// 	// deer.animations.idle2.play()
+	// }, 3000)
+
+	// runJump.play()
 
 	gpgpu.particlesVariable.material.uniforms.uModelMatrix.value =
 		deer.mesh.matrixWorld
@@ -239,6 +346,7 @@ function createGPGPUParticles({ mesh }) {
 	particles.material = new THREE.ShaderMaterial({
 		vertexShader: particlesVertexShader,
 		fragmentShader: particlesFragmentShader,
+		transparent: true,
 		uniforms: {
 			uSize: new THREE.Uniform(0.065),
 			uResolution: new THREE.Uniform(
@@ -316,6 +424,15 @@ function patronum(material) {
 		shader.uniforms.uCamera = new THREE.Uniform(new THREE.Vector3(0, 0, 0))
 		shader.uniforms.uColor = new THREE.Uniform(new THREE.Color(0x70e2ff))
 		shader.uniforms.uTime = new THREE.Uniform(0)
+		shader.uniforms.uIntro = new THREE.Uniform(configs.intro)
+
+		window.addEventListener('click', () => {
+			gsap.to(deer.uniforms.uIntro, {
+				value: 1,
+				duration: 4,
+				ease: 'power4.out',
+			})
+		})
 
 		let token = '#include <common>'
 
@@ -324,9 +441,11 @@ function patronum(material) {
 			/*glsl*/ `
 			#include <common>
 			${simplexNoise4D}
+			${rotateMat3}
 			uniform vec3 uCamera;
 			uniform vec3 uColor;			
 			uniform float uTime;
+			uniform float uIntro;
 			varying vec3 vPosition;			
 			varying vec3 vBasePosition;
 			varying vec3 vN;
@@ -342,6 +461,7 @@ function patronum(material) {
 			uniform vec3 uCamera;
 			uniform vec3 uColor;			
 			uniform float uTime;
+			uniform float uIntro;
 			varying vec3 vPosition;			
 			varying vec3 vBasePosition;
 			varying vec3 vN;
@@ -378,8 +498,32 @@ function patronum(material) {
 				mvPosition = instanceMatrix * mvPosition;
 
 			#endif
-
+			
 			mvPosition = modelMatrix * mvPosition;
+			// vPosition = mvPosition.xyz;
+			
+
+			float inverseIntro = (1. - uIntro);
+			// mvPosition.y += inverseIntro * 3.;
+			mvPosition.y -= 5.;
+			mvPosition.z -= 4.3;
+			// mvPosition.y += sin(mvPosition.z * 3. + uTime) * inverseIntro;
+
+			float angle = (  2. + 3.5 * mvPosition.z) * 3.14 * smoothstep(0.8,0.,uIntro);
+
+			mvPosition.xyz = rotationMatrix(vec3(0,0,1), angle) * mvPosition.xyz;
+			mvPosition.xyz = rotationMatrix(vec3(0,1,0), angle) * mvPosition.xyz;
+			mvPosition.xyz = rotationMatrix(vec3(1,0,0), -angle) * mvPosition.xyz;
+			float n = pow(uIntro,1.5) * (1. + inverseIntro * snoise(vec4(mvPosition.xyz * 0.1,uTime)) * 2.5);
+			mvPosition.xyz *= n;
+			// float z = mvPosition.z;
+
+			mvPosition.y += 5. * uIntro;
+			mvPosition.z += 4.3 * uIntro;
+
+
+			
+
 			vPosition = mvPosition.xyz;
 			vBasePosition = vec4(modelMatrix * vec4(position,1.)).xyz;
 
@@ -421,7 +565,7 @@ function patronum(material) {
 
 			textBig = pow(textBig,1.) + 0.3;
 
-			diffuseColor.a = patronum * text * textBig;
+			diffuseColor.a = patronum * text * textBig * smoothstep(0.05,0.7,pow(uIntro,2.));
 
 			diffuseColor *= 2.5;
 			
@@ -446,9 +590,12 @@ function patronum(material) {
 const configs = {
 	example: 5,
 	baseColor: 0x70e2ff,
+	intro: 0,
 }
 const gui = new dat.GUI()
-gui.add(configs, 'example', 0, 10, 0.1).onChange((val) => console.log(val))
+gui
+	.add(configs, 'intro', 0, 1, 0.01)
+	.onChange((val) => (deer.uniforms.uIntro.value = val))
 
 gui.addColor(configs, 'baseColor').onChange((val) => {
 	console.log(val)
