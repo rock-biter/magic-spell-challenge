@@ -429,7 +429,7 @@ function patronum(material) {
 		window.addEventListener('click', () => {
 			gsap.to(deer.uniforms.uIntro, {
 				value: 1,
-				duration: 3,
+				duration: 4,
 				ease: 'power4.out',
 			})
 		})
@@ -502,13 +502,14 @@ function patronum(material) {
 			mvPosition = modelMatrix * mvPosition;
 			// vPosition = mvPosition.xyz;
 			
+
 			float inverseIntro = (1. - uIntro);
 			// mvPosition.y += inverseIntro * 3.;
 			mvPosition.y -= 5.;
 			mvPosition.z -= 4.3;
 			// mvPosition.y += sin(mvPosition.z * 3. + uTime) * inverseIntro;
 
-			float angle = (  2. + 1.5 * mvPosition.z) * 3.14 * smoothstep(0.8,0.,uIntro);
+			float angle = (  2. + 3.5 * mvPosition.z) * 3.14 * smoothstep(0.8,0.,uIntro);
 
 			mvPosition.xyz = rotationMatrix(vec3(0,0,1), angle) * mvPosition.xyz;
 			mvPosition.xyz = rotationMatrix(vec3(0,1,0), angle) * mvPosition.xyz;
@@ -517,8 +518,11 @@ function patronum(material) {
 			mvPosition.xyz *= n;
 			// float z = mvPosition.z;
 
-			mvPosition.y += 5.;
-			mvPosition.z += 4.3;
+			mvPosition.y += 5. * uIntro;
+			mvPosition.z += 4.3 * uIntro;
+
+
+			
 
 			vPosition = mvPosition.xyz;
 			vBasePosition = vec4(modelMatrix * vec4(position,1.)).xyz;
