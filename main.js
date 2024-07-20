@@ -24,6 +24,8 @@ import Stats from 'three/addons/libs/stats.module.js'
 import { Matrix4 } from 'three'
 import { LoopOnce } from 'three'
 import gsap from 'gsap'
+import { Vector3 } from 'three'
+import { AdditiveBlending } from 'three'
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -75,18 +77,44 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 
 	deer.mixer = new THREE.AnimationMixer(gltf.scene)
 	console.log(gltf.animations)
-	const runJump = deer.mixer.clipAction(gltf.animations[98])
-	deer.animations.runJump = runJump
-	// runJump.setLoop(false)
-	deer.animations.runFront = deer.mixer.clipAction(gltf.animations[43])
 
-	deer.animations.idle2 = deer.mixer.clipAction(gltf.animations[19])
+	const animations = {}
+	deer.animations = animations
+
+	animations.runJump = deer.mixer.clipAction(gltf.animations[98])
+	// runJump.setLoop(false)
+	animations.runFront = deer.mixer.clipAction(gltf.animations[43])
+
+	animations.idle2 = deer.mixer.clipAction(gltf.animations[19])
+	animations.idle4 = deer.mixer
+		.clipAction(gltf.animations[21])
+		.setLoop(LoopOnce, 1)
 
 	// deer.animations.runFront.play()
 	// deer.animations.runFront.clampWhenFinished = true
 	// deer.animations.runJump.clampWhenFinished = true
 
 	// jump
+
+	animations.sleepLoop = deer.mixer.clipAction(gltf.animations[40])
+	animations.sleepEnd = deer.mixer
+		.clipAction(gltf.animations[39])
+		.setLoop(LoopOnce, 1)
+	animations.lieLoop = deer.mixer
+		.clipAction(gltf.animations[37])
+		.setLoop(LoopOnce, 1)
+	animations.lieLoop2 = deer.mixer
+		.clipAction(gltf.animations[38])
+		.setLoop(LoopOnce, 1)
+	animations.lieEnd = deer.mixer
+		.clipAction(gltf.animations[36])
+		.setLoop(LoopOnce, 1)
+
+	animations.sleepEnd.clampWhenFinished = true
+	animations.lieLoop.clampWhenFinished = true
+	animations.lieLoop2.clampWhenFinished = true
+	animations.lieEnd.clampWhenFinished = true
+	animations.idle4.clampWhenFinished = true
 
 	// deer.animations.jumpStart = deer.mixer
 	// 	.clipAction(gltf.animations[32])
@@ -111,7 +139,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	// deer.animations.jumpDown.play()
 	// deer.animations.jumpEnd.play()
 
-	let action = deer.animations.runFront
+	let action = deer.animations.sleepLoop
 
 	action.play()
 
@@ -129,7 +157,111 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	// 	action.play()
 	// }, 5000)
 
-	// deer.mixer.addEventListener('finished', (e) => {
+	window.addEventListener(
+		'click',
+		() => {
+			action.crossFadeTo(animations.sleepEnd, 0.5, true)
+			animations.sleepEnd.play()
+			gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+				value: 0.5,
+				duration: 0.5,
+			})
+		},
+		{ once: true }
+	)
+
+	deer.mixer.addEventListener('finished', (e) => {
+		switch (e.action) {
+			case animations.sleepEnd:
+				animations.sleepEnd.crossFadeTo(animations.lieLoop, 0.5, true)
+				animations.lieLoop.play()
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+					value: 0.3,
+					duration: 0.5,
+				})
+
+				break
+			case animations.lieLoop:
+				animations.lieLoop.crossFadeTo(animations.lieLoop2, 0.5, true)
+				animations.lieLoop2.play()
+
+				break
+			case animations.lieLoop2:
+				animations.lieLoop2.crossFadeTo(animations.lieEnd, 0.5, true)
+				animations.lieEnd.play()
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength, {
+					value: 5,
+					duration: 0.5,
+				})
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency, {
+					value: 1,
+					duration: 0.5,
+				})
+				break
+			case animations.lieEnd:
+				animations.lieEnd.crossFadeTo(animations.idle4, 0.5, true)
+				animations.idle4.play()
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+					value: 2,
+					duration: 0.5,
+				})
+
+				// gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength, {
+				// 	value: 15,
+				// 	duration: 1,
+				// })
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence, {
+					value: 1.8,
+					duration: 0.5,
+				})
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency, {
+					value: 0.2,
+					duration: 0.5,
+				})
+
+				break
+			case animations.idle4:
+				animations.idle4.crossFadeTo(animations.runFront, 0.5, true)
+				animations.runFront.play()
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence, {
+					value: 2,
+					duration: 2.5,
+				})
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength, {
+					value: 7.9,
+					duration: 2.5,
+				})
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency, {
+					value: 0.04,
+					duration: 2.5,
+				})
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uSpeed, {
+					value: 6,
+					duration: 3,
+				})
+
+				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+					value: 1,
+					duration: 2,
+				})
+
+				gsap.to(particles.material.uniforms.uSize, {
+					value: 0.058,
+					// value: 1.3,
+					duration: 2,
+				})
+				break
+		}
+	})
 	// 	console.log('finished', e)
 
 	// 	const animName = e.action._clip.name
@@ -206,7 +338,7 @@ function createGPGPUParticles({ mesh }) {
 	const baseParticlesTexture = gpgpu.computation.createTexture()
 	const skinIndexTexture = gpgpu.computation.createTexture()
 	const skinWeightTexture = gpgpu.computation.createTexture()
-	const boneTexture = gpgpu.computation.createTexture()
+	// const boneTexture = gpgpu.computation.createTexture()
 
 	for (let i = 0; i < count; i++) {
 		const i3 = i * 3
@@ -219,7 +351,7 @@ function createGPGPUParticles({ mesh }) {
 			geometry.attributes.position.array[i3 + 1]
 		baseParticlesTexture.image.data[i4 + 2] =
 			geometry.attributes.position.array[i3 + 2]
-		baseParticlesTexture.image.data[i4 + 3] = Math.random()
+		baseParticlesTexture.image.data[i4 + 3] = 1 + Math.random()
 
 		skinIndexTexture.image.data[i4 + 0] =
 			geometry.attributes.skinIndex.array[i4 + 0]
@@ -272,14 +404,17 @@ function createGPGPUParticles({ mesh }) {
 
 	gpgpu.particlesVariable.material.uniforms.uBoneTexture = new THREE.Uniform()
 	gpgpu.particlesVariable.material.uniforms.uModelMatrix = new THREE.Uniform()
+	gpgpu.particlesVariable.material.uniforms.uSpeed = new THREE.Uniform(0)
 
 	// add uniforms params
+	gpgpu.particlesVariable.material.uniforms.uIntro = new THREE.Uniform(0) //2
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence =
-		new THREE.Uniform(2)
+		new THREE.Uniform(0.3) //2
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength =
-		new THREE.Uniform(7.9)
+		new THREE.Uniform(2.2) //7.9
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency =
-		new THREE.Uniform(0.04)
+		new THREE.Uniform(2) //0.04
+	gpgpu.particlesVariable.material.uniforms.uLife = new THREE.Uniform(3) //0.04
 
 	// Init
 	gpgpu.computation.init()
@@ -347,8 +482,12 @@ function createGPGPUParticles({ mesh }) {
 		vertexShader: particlesVertexShader,
 		fragmentShader: particlesFragmentShader,
 		transparent: true,
+		// blending: AdditiveBlending,
+		depthWrite: false,
 		uniforms: {
-			uSize: new THREE.Uniform(0.065),
+			uSize: new THREE.Uniform(0.04),
+			// uSize: new THREE.Uniform(0.0),
+			uIntro: new THREE.Uniform(0),
 			uResolution: new THREE.Uniform(
 				new THREE.Vector2(
 					sizes.width * sizes.pixelRatio,
@@ -370,29 +509,41 @@ function createGPGPUParticles({ mesh }) {
 	 * Tweaks
 	 */
 	gui
+		.add(gpgpu.particlesVariable.material.uniforms.uSpeed, 'value')
+		.min(-10)
+		.max(10)
+		.step(0.01)
+		.name('uSpeed')
+	gui
 		.add(particles.material.uniforms.uSize, 'value')
 		.min(0)
-		.max(1)
+		.max(10)
 		.step(0.001)
 		.name('uSize')
 	gui
 		.add(gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence, 'value')
 		.min(0)
-		.max(1)
+		.max(3)
 		.step(0.001)
 		.name('uFlowfieldInfluence')
 	gui
 		.add(gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength, 'value')
 		.min(0)
-		.max(10)
+		.max(20)
 		.step(0.001)
 		.name('uFlowfieldStrength')
 	gui
 		.add(gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency, 'value')
 		.min(0)
-		.max(1)
+		.max(3)
 		.step(0.001)
 		.name('uFlowfieldFrequency')
+	gui
+		.add(gpgpu.particlesVariable.material.uniforms.uLife, 'value')
+		.min(0)
+		.max(10)
+		.step(0.01)
+		.name('uLife')
 }
 
 /**
@@ -426,13 +577,32 @@ function patronum(material) {
 		shader.uniforms.uTime = new THREE.Uniform(0)
 		shader.uniforms.uIntro = new THREE.Uniform(configs.intro)
 
-		window.addEventListener('click', () => {
-			gsap.to(deer.uniforms.uIntro, {
-				value: 1,
-				duration: 4,
-				ease: 'power4.out',
-			})
+		// window.addEventListener('click', () => {
+		gsap.to(deer.uniforms.uIntro, {
+			value: 1,
+			duration: 1.5,
+			ease: 'power2.inOut',
 		})
+		gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
+			value: 1,
+			duration: 1.5,
+			ease: 'power2.inOut',
+		})
+
+		// gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+		// 	value: 3,
+		// 	duration: 0.5,
+		// 	ease: 'power2.inOut',
+		// 	delay: 1,
+		// })
+
+		// gsap.to(particles.material.uniforms.uSize, {
+		// 	value: 0.2,
+		// 	duration: 1,
+		// 	ease: 'power2.inOut',
+		// 	delay: 1.2,
+		// })
+		// })
 
 		let token = '#include <common>'
 
@@ -505,21 +675,21 @@ function patronum(material) {
 
 			float inverseIntro = (1. - uIntro);
 			// mvPosition.y += inverseIntro * 3.;
-			mvPosition.y -= 5.;
-			mvPosition.z -= 4.3;
+			mvPosition.y -= 2.;
+			mvPosition.z -= 1.3;
 			// mvPosition.y += sin(mvPosition.z * 3. + uTime) * inverseIntro;
 
-			float angle = (  2. + 3.5 * mvPosition.z) * 3.14 * smoothstep(0.8,0.,uIntro);
+			float angle = (  2. + 2.5 * mvPosition.z) * 3.14 * inverseIntro; //smoothstep(0.95,0.,uIntro);
 
 			mvPosition.xyz = rotationMatrix(vec3(0,0,1), angle) * mvPosition.xyz;
 			mvPosition.xyz = rotationMatrix(vec3(0,1,0), angle) * mvPosition.xyz;
 			mvPosition.xyz = rotationMatrix(vec3(1,0,0), -angle) * mvPosition.xyz;
-			float n = pow(uIntro,1.5) * (1. + inverseIntro * snoise(vec4(mvPosition.xyz * 0.1,uTime)) * 2.5);
+			float n = pow(uIntro,1.5) * (1. + inverseIntro * snoise(vec4(mvPosition.xyz * 0.1,uTime)) * 3.5);
 			mvPosition.xyz *= n;
 			// float z = mvPosition.z;
 
-			mvPosition.y += 5. * uIntro;
-			mvPosition.z += 4.3 * uIntro;
+			mvPosition.y += 2. * uIntro;
+			mvPosition.z += 1.3 * uIntro;
 
 
 			

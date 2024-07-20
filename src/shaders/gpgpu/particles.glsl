@@ -1,5 +1,8 @@
 uniform float uTime;
 uniform float uDeltaTime;
+uniform float uSpeed;
+uniform float uIntro;
+uniform float uLife;
 uniform sampler2D uBase;
 uniform float uFlowFieldInfluence;
 uniform float uFlowFieldStrength;
@@ -28,6 +31,7 @@ mat4 getBoneMatrix( const in float i ) {
 }
 
 #include ../includes/simplexNoise4d.glsl
+#include ../rotate-mat-3.glsl
 
 void main()
 {
@@ -58,6 +62,26 @@ void main()
     // Dead
     if(particle.a >= 1.0)
     {
+
+        float intro = uIntro;
+        float inverseIntro = (1. - intro);
+        // mvPosition.y += inverseIntro * 3.;
+        base.y -= 2.;
+        base.z -= 1.3;
+        // base.y += sin(base.z * 3. + uTime) * inverseIntro;
+
+        float angle = (  2. + 2.5 * base.z) * 3.14 * inverseIntro; //smoothstep(0.95,0.,intro);
+
+        base.xyz = rotationMatrix(vec3(0,0,1), angle) * base.xyz;
+        base.xyz = rotationMatrix(vec3(0,1,0), angle) * base.xyz;
+        base.xyz = rotationMatrix(vec3(1,0,0), -angle) * base.xyz;
+        float n = pow(intro,1.5) * (1. + inverseIntro * simplexNoise4d(vec4(base.xyz * 0.1,uTime)) * 3.5);
+        base.xyz *= n;
+        // float z = base.z;
+
+        base.y += 2. * intro;
+        base.z += 1.3 * intro;
+
         particle.a = mod(particle.a, 1.0);
         particle.xyz = base.xyz;
         particle.x += sin(uTime * 1. + particle.x) * 0.2;
@@ -86,7 +110,7 @@ void main()
             simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 2.0, time * 0.5))
         );
         flowField = normalize(flowField) * 0.5;
-        flowField.z = -abs(flowField.z * 6.);
+        flowField.z = -abs(flowField.z ) * uSpeed;
         particle.xyz += flowField * uDeltaTime * uFlowFieldStrength * uFlowFieldInfluence;
         
         // particle.z += -0.2;
@@ -94,7 +118,7 @@ void main()
 
         // Decay
         // particle.a += uDeltaTime * 0.3;
-        particle.a += uDeltaTime * 0.3;
+        particle.a += uDeltaTime * 0.3 / uLife;
     }
     
     gl_FragColor = particle;
