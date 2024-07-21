@@ -818,7 +818,7 @@ const camera = new THREE.PerspectiveCamera(
 	0.01,
 	5000
 )
-camera.position.set(15, 15, 17)
+camera.position.set(10, 10, 11)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
 /**
@@ -924,6 +924,8 @@ toneMappingFolder
 	})
 
 handleResize()
+
+gui.close()
 /**
  * frame loop
  */
