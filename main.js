@@ -586,18 +586,20 @@ function patronum(material) {
 		// window.addEventListener('click', () => {
 		gsap.to(deer.uniforms.uIntro, {
 			value: 1,
-			duration: 1.5,
+			duration: 2.5,
 			ease: 'power2.inOut',
 			onUpdate: () => {
 				grass.uniforms.uIntro.value = deer.uniforms.uIntro.value
+				gpgpu.particlesVariable.material.uniforms.uIntro =
+					deer.uniforms.uIntro.value
 			},
 		})
 
-		gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
-			value: 1,
-			duration: 1.5,
-			ease: 'power2.inOut',
-		})
+		// gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
+		// 	value: 1,
+		// 	duration: 1.5,
+		// 	ease: 'power2.inOut',
+		// })
 
 		gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
 			value: 3,
@@ -773,9 +775,10 @@ const configs = {
 	intro: 0,
 }
 const gui = new dat.GUI()
-gui
-	.add(configs, 'intro', 0, 1, 0.01)
-	.onChange((val) => (deer.uniforms.uIntro.value = val))
+gui.add(configs, 'intro', 0, 1, 0.01).onChange((val) => {
+	deer.uniforms.uIntro.value = val
+	grass.uniforms.uIntro.value = val
+})
 
 gui.addColor(configs, 'baseColor').onChange((val) => {
 	console.log(val)
@@ -832,6 +835,8 @@ const camera = new THREE.PerspectiveCamera(
 	5000
 )
 camera.position.set(11, 9, 11)
+camera.position.set(20, 15, 20)
+// camera.position.set(10, 40, 10)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
 /**

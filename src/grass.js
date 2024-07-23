@@ -149,16 +149,28 @@ export default class Grass extends Object3D {
 				token,
 				/*glsl */ `
 
-        float distFactor = 1. - smoothstep(2.* uIntro,uRadius * uIntro,length(vPosition));
-        distFactor = pow(distFactor,1.);
+        float len = length(vPosition);
+        float waveIntro = max(uIntro * 2. - 1., 0.);
+        
+        float distFactor = 1. - smoothstep(2.* waveIntro,uRadius * waveIntro,len);
+        // distFactor = pow(distFactor,1.);
         float glitter = max(simplexNoise4d(vec4(vPosition * 80.,uTime * 0.5)) ,0.) ;
         float noise = simplexNoise4d(vec4(vPosition * 0.1,uTime * 0.1));
         // noise = pow(noise,3.);
+        float distanceNoise = simplexNoise4d(vec4(vPosition * 0.2,uTime * 0.1)) * 2.;
+        float waveRadius = (uRadius ) * waveIntro + 2. * waveIntro;
+        float inWave = 1. - smoothstep(waveRadius + 1. * waveIntro,waveRadius - 8. * waveIntro,len + distanceNoise);
+        float outWave = 1. - smoothstep(waveRadius,waveRadius + 1. * waveIntro,len + distanceNoise);
+        
+        float introFactor = 0. + inWave * outWave * smoothstep(uRadius,0.,waveRadius) * 5.;
+
         noise = noise * 0.5 + 0.5;
+
         // noise = pow(noise,2.);
         // diffuseColor.a *= simplexNoise4d(vec4(vPosition * 0.1,uTime * 0.5)) * 0.3 + 0.5 * simplexNoise4d(vec4(vPosition * 20.,uTime * 0.5)) * 0.2;
         // diffuseColor.a *= 0.7;
-        diffuseColor.a = noise * glitter * distFactor;
+        // diffuseColor.a = noise * glitter * distFactor * introFactor;
+        diffuseColor.a = max( introFactor, noise * glitter * distFactor );
         ${token}
 
         
