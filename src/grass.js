@@ -157,12 +157,16 @@ export default class Grass extends Object3D {
         float glitter = max(simplexNoise4d(vec4(vPosition * 80.,uTime * 0.5)) ,0.) ;
         float noise = simplexNoise4d(vec4(vPosition * 0.1,uTime * 0.1));
         // noise = pow(noise,3.);
-        float distanceNoise = simplexNoise4d(vec4(vPosition * 0.2,uTime * 0.1)) * 2.;
-        float waveRadius = (uRadius ) * waveIntro + 2. * waveIntro;
-        float inWave = 1. - smoothstep(waveRadius + 1. * waveIntro,waveRadius - 8. * waveIntro,len + distanceNoise);
-        float outWave = 1. - smoothstep(waveRadius,waveRadius + 1. * waveIntro,len + distanceNoise);
-        
-        float introFactor = 0. + inWave * outWave * smoothstep(uRadius,0.,waveRadius) * 5.;
+        float introFactor = 0.;
+        if(uIntro != 1.) {
+
+          float distanceNoise = simplexNoise4d(vec4(vPosition * 0.2,uTime * 0.1)) * 2.;
+          float waveRadius = (uRadius ) * waveIntro + 2. * waveIntro;
+          float inWave = 1. - smoothstep(waveRadius + 1. * waveIntro,waveRadius - 8. * waveIntro,len + distanceNoise);
+          float outWave = 1. - smoothstep(waveRadius,waveRadius + 1. * waveIntro,len + distanceNoise);
+          
+          introFactor += inWave * outWave * smoothstep(uRadius,0.,waveRadius) * 5.;
+        }
 
         noise = noise * 0.5 + 0.5;
 
