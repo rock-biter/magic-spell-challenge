@@ -60,7 +60,8 @@ export default class Grass extends Object3D {
 			const x = Math.sin(angle) * (r + Math.sin(i) * 0.5)
 			const z = Math.cos(angle) * (r + Math.cos(i) * 0.5)
 
-			scale.y = 1 + Math.random() * 2
+			scale.y = 1 + Math.random() * 2 + Math.pow(Math.random(), 10) * 2
+			// scale.y = 1 + Math.pow(Math.random(), 3) * 2
 
 			position.set(x, 0, z)
 

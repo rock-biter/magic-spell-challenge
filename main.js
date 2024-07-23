@@ -590,7 +590,7 @@ function patronum(material) {
 			ease: 'power2.inOut',
 			onUpdate: () => {
 				grass.uniforms.uIntro.value = deer.uniforms.uIntro.value
-				gpgpu.particlesVariable.material.uniforms.uIntro =
+				gpgpu.particlesVariable.material.uniforms.uIntro.value =
 					deer.uniforms.uIntro.value
 			},
 		})
