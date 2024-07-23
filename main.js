@@ -26,6 +26,7 @@ import { LoopOnce } from 'three'
 import gsap from 'gsap'
 import { Vector3 } from 'three'
 import { AdditiveBlending } from 'three'
+import Grass from './src/grass'
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
@@ -64,7 +65,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 			const mat = el.material
 			deer.material = mat
 			deer.mesh = el
-			console.log(deer.mesh, gltf.scene)
+			// console.log(deer.mesh, gltf.scene)
 
 			patronum(mat)
 
@@ -73,10 +74,10 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	})
 
 	deer.matrix = matrix
-	console.log('matrix', matrix)
+	// console.log('matrix', matrix)
 
 	deer.mixer = new THREE.AnimationMixer(gltf.scene)
-	console.log(gltf.animations)
+	// console.log(gltf.animations)
 
 	const animations = {}
 	deer.animations = animations
@@ -246,8 +247,13 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uSpeed, {
 					value: 6,
-					duration: 3,
+					duration: 2,
 				})
+
+				// gsap.to(grass.uniforms.uSpeed, {
+				// 	value: 6,
+				// 	duration: 3,
+				// })
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
 					value: 1,
@@ -582,7 +588,11 @@ function patronum(material) {
 			value: 1,
 			duration: 1.5,
 			ease: 'power2.inOut',
+			onUpdate: () => {
+				grass.uniforms.uIntro.value = deer.uniforms.uIntro.value
+			},
 		})
+
 		gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
 			value: 1,
 			duration: 1.5,
@@ -778,6 +788,9 @@ gui.addColor(configs, 'baseColor').onChange((val) => {
 const scene = new THREE.Scene()
 // scene.background = new THREE.Color(0xdedede)
 
+const grass = new Grass()
+scene.add(grass)
+
 // __box__
 /**
  * BOX
@@ -818,7 +831,7 @@ const camera = new THREE.PerspectiveCamera(
 	0.01,
 	5000
 )
-camera.position.set(10, 10, 11)
+camera.position.set(11, 9, 11)
 camera.lookAt(new THREE.Vector3(0, 4, 0))
 
 /**
@@ -960,6 +973,14 @@ function tic() {
 
 	if (deer.uniforms) {
 		deer.uniforms.uTime.value = time
+	}
+
+	if (grass.uniforms?.uTime && deer.uniforms) {
+		grass.uniforms.uTime.value = time
+		let speed = gpgpu.particlesVariable.material.uniforms.uSpeed.value / 6
+		grass.uniforms.uSpeed.value += deltaTime * speed
+
+		// console.log(grass.uniforms.uSpeed.value)
 	}
 
 	// GPGPU Update
