@@ -45,12 +45,13 @@ export default class Mixer {
 	pause() {
 		if (this.currentTrack && this.currentTrack.audio.isPlaying) {
 			this.currentTrack.audio.pause()
-			this.updatePlayingTrackUi(false)
+			// this.updatePlayingTrackUi(false)
 			//update ui
 		}
 	}
 
 	next() {
+		console.log('next')
 		let i = this.playlist.indexOf(this.currentTrack)
 		if (i > -1) {
 			i++
@@ -181,21 +182,22 @@ export default class Mixer {
 		// // console.log(this.controls)
 		// this.domTracksListWrapper.innerHTML = ''
 
-		// this.playlist.forEach((track) => {
-		// 	this.domTracksListWrapper.append(track.domElement)
+		this.playlist.forEach((track) => {
+			// this.domTracksListWrapper.append(track.domElement)
 
-		// 	track.audio.onEnded = () => {
-		// 		if (!track.audio.getLoop()) {
-		// 			this.next()
-		// 		}
-		// 	}
+			track.audio.onEnded = () => {
+				console.log('on end')
+				if (!track.audio.getLoop()) {
+					this.next()
+				}
+			}
 
-		// 	track.domElement.addEventListener('click', () => {
-		// 		// console.log('click on track')
-		// 		this.pause()
-		// 		this.play(track)
-		// 	})
-		// })
+			// track.domElement.addEventListener('click', () => {
+			// 	// console.log('click on track')
+			// 	this.pause()
+			// 	this.play(track)
+			// })
+		})
 
 		// this.domCurrentTrackInfo.innerHTML = `
 		//   <div class="grow truncate min-w-0">
