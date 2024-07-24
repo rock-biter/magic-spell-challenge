@@ -857,6 +857,12 @@ controls.target.set(0, 4, 0)
 controls.enableDamping = true
 controls.autoRotate = true
 controls.autoRotateSpeed = 1
+controls.enablePan = false
+
+controls.minPolarAngle = Math.PI * 0.1
+controls.maxPolarAngle = Math.PI * 0.5
+controls.maxDistance = 24
+controls.minDistance = 8
 
 /**
  * Lights

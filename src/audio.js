@@ -51,7 +51,7 @@ export default class Mixer {
 	}
 
 	next() {
-		console.log('next')
+		// console.log('next')
 		let i = this.playlist.indexOf(this.currentTrack)
 		if (i > -1) {
 			i++
@@ -186,7 +186,7 @@ export default class Mixer {
 			// this.domTracksListWrapper.append(track.domElement)
 
 			track.audio.onEnded = () => {
-				console.log('on end')
+				// console.log('on end')
 				if (!track.audio.getLoop()) {
 					this.next()
 				}
