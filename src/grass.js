@@ -186,7 +186,7 @@ export default class Grass extends Object3D {
         `
 			)
 
-			console.log(shader.fragmentShader)
+			// console.log(shader.fragmentShader)
 		}
 	}
 }

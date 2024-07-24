@@ -8,7 +8,7 @@ import * as dat from 'lil-gui'
 import {
 	GLTFLoader,
 	GPUComputationRenderer,
-	ShaderPass,
+	// ShaderPass,
 } from 'three/examples/jsm/Addons.js'
 import simplexNoise4D from './src/shaders/simplex-noise-4d.glsl'
 import rotateMat3 from './src/shaders/rotate-mat-3.glsl'
@@ -20,20 +20,20 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
-import Stats from 'three/addons/libs/stats.module.js'
+// import Stats from 'three/addons/libs/stats.module.js'
 import { Matrix4 } from 'three'
 import { LoopOnce } from 'three'
 import gsap from 'gsap'
-import { Vector3 } from 'three'
-import { AdditiveBlending } from 'three'
+// import { Vector3 } from 'three'
+// import { AdditiveBlending } from 'three'
 import Grass from './src/grass'
 import Mixer from './src/audio'
 import { SplitText } from 'gsap/all'
 
 gsap.registerPlugin(SplitText)
 
-const stats = new Stats()
-document.body.appendChild(stats.dom)
+// const stats = new Stats()
+// document.body.appendChild(stats.dom)
 
 const loadingManager = new THREE.LoadingManager()
 const gltfLoader = new GLTFLoader(loadingManager)
@@ -64,9 +64,10 @@ gsap.set(question.chars, {
 		return Math.random() * 200 - 100
 	},
 	x: (i) => {
-		console.log(i)
+		// console.log(i)
 		return Math.random() * (i + 2) * 5
 	},
+	filter: 'blur(10px)',
 	rotate: () => {
 		return 0.5 * Math.PI * (Math.random() * 2 - 1) + 'rad'
 	},
@@ -86,6 +87,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 		rotate: 0,
 		duration: 3,
 		stagger: 0.1,
+		filter: 'blur(0px)',
 		ease: 'elastic.out(0.6,0.4)',
 		onComplete: () => {
 			gsap.to(input, { autoAlpha: 1, duration: 1 })
@@ -201,10 +203,16 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 		// console.log(input.value)
 		contentVisible.innerHTML = input.value
 		if (input.value.toLowerCase() === 'always') {
-			castSpell(action)
-
-			gsap.to(input, { autoAlpha: 0, duration: 0.5 })
-			gsap.to(input, { autoAlpha: 0, duration: 0.5 })
+			input.blur()
+			gsap.to(input, {
+				autoAlpha: 0,
+				duration: 1,
+				delay: 0.5,
+				onComplete: () => {
+					castSpell(action)
+				},
+			})
+			// gsap.to(input, { autoAlpha: 0, duration: 0.5 })
 		}
 	})
 
@@ -515,50 +523,60 @@ function createGPGPUParticles({ mesh }) {
 	/**
 	 * Tweaks
 	 */
-	gui
-		.add(gpgpu.particlesVariable.material.uniforms.uSpeed, 'value')
-		.min(-10)
-		.max(10)
-		.step(0.01)
-		.name('uSpeed')
-	gui
-		.add(particles.material.uniforms.uSize, 'value')
-		.min(0)
-		.max(10)
-		.step(0.001)
-		.name('uSize')
-	gui
-		.add(gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence, 'value')
-		.min(0)
-		.max(3)
-		.step(0.001)
-		.name('uFlowfieldInfluence')
-	gui
-		.add(gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength, 'value')
-		.min(0)
-		.max(20)
-		.step(0.001)
-		.name('uFlowfieldStrength')
-	gui
-		.add(gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency, 'value')
-		.min(0)
-		.max(3)
-		.step(0.001)
-		.name('uFlowfieldFrequency')
-	gui
-		.add(gpgpu.particlesVariable.material.uniforms.uLife, 'value')
-		.min(0)
-		.max(10)
-		.step(0.01)
-		.name('uLife')
+	if (gui) {
+		gui
+			.add(gpgpu.particlesVariable.material.uniforms.uSpeed, 'value')
+			.min(-10)
+			.max(10)
+			.step(0.01)
+			.name('uSpeed')
+		gui
+			.add(particles.material.uniforms.uSize, 'value')
+			.min(0)
+			.max(10)
+			.step(0.001)
+			.name('uSize')
+		gui
+			.add(
+				gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence,
+				'value'
+			)
+			.min(0)
+			.max(3)
+			.step(0.001)
+			.name('uFlowfieldInfluence')
+		gui
+			.add(
+				gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength,
+				'value'
+			)
+			.min(0)
+			.max(20)
+			.step(0.001)
+			.name('uFlowfieldStrength')
+		gui
+			.add(
+				gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency,
+				'value'
+			)
+			.min(0)
+			.max(3)
+			.step(0.001)
+			.name('uFlowfieldFrequency')
+		gui
+			.add(gpgpu.particlesVariable.material.uniforms.uLife, 'value')
+			.min(0)
+			.max(10)
+			.step(0.01)
+			.name('uLife')
+	}
 }
-
 /**
  *
  * @param {THREE.MeshStandardMaterial} material
  */
 function patronum(material) {
-	console.log(material)
+	// console.log(material)
 
 	material.depthWrite = false
 	material.transparent = true
@@ -572,7 +590,7 @@ function patronum(material) {
 	// console.log(material.roughnessMap, material.metalnessMap)
 
 	material.onBeforeCompile = (shader) => {
-		console.log(shader.vertexShader)
+		// console.log(shader.vertexShader)
 		// console.log(`
 		// 	------
 		// 	`)
@@ -745,18 +763,19 @@ const configs = {
 	baseColor: 0x70e2ff,
 	intro: 0,
 }
-const gui = new dat.GUI()
-gui.add(configs, 'intro', 0, 1, 0.01).onChange((val) => {
-	deer.uniforms.uIntro.value = val
-	grass.uniforms.uIntro.value = val
-	gpgpu.particlesVariable.material.uniforms.uIntro.value = val
-})
+let gui // = new dat.GUI()
+if (gui) {
+	gui.add(configs, 'intro', 0, 1, 0.01).onChange((val) => {
+		deer.uniforms.uIntro.value = val
+		grass.uniforms.uIntro.value = val
+		gpgpu.particlesVariable.material.uniforms.uIntro.value = val
+	})
 
-gui.addColor(configs, 'baseColor').onChange((val) => {
-	console.log(val)
-	deer.uniforms?.uColor?.value?.set(val)
-})
-
+	gui.addColor(configs, 'baseColor').onChange((val) => {
+		// console.log(val)
+		deer.uniforms?.uColor?.value?.set(val)
+	})
+}
 /**
  * Scene
  */
@@ -886,36 +905,40 @@ composer.addPass(outputPass)
 // const effect1 = new ShaderPass(DotScreenShader)
 // effect1.uniforms['scale'].value = 4
 // composer.addPass(effect1)
+if (gui) {
+	const bloomFolder = gui.addFolder('bloom')
 
-const bloomFolder = gui.addFolder('bloom')
+	bloomFolder
+		.add(debugObject, 'threshold', 0.0, 1.0)
+		.onChange(function (value) {
+			bloomPass.threshold = Number(value)
+		})
 
-bloomFolder.add(debugObject, 'threshold', 0.0, 1.0).onChange(function (value) {
-	bloomPass.threshold = Number(value)
-})
-
-bloomFolder.add(debugObject, 'strength', 0.0, 3.0).onChange(function (value) {
-	bloomPass.strength = Number(value)
-})
-
-bloomFolder
-	.add(debugObject, 'radius', 0.0, 1.0)
-	.step(0.01)
-	.onChange(function (value) {
-		bloomPass.radius = Number(value)
+	bloomFolder.add(debugObject, 'strength', 0.0, 3.0).onChange(function (value) {
+		bloomPass.strength = Number(value)
 	})
 
-const toneMappingFolder = gui.addFolder('tone mapping')
+	bloomFolder
+		.add(debugObject, 'radius', 0.0, 1.0)
+		.step(0.01)
+		.onChange(function (value) {
+			bloomPass.radius = Number(value)
+		})
 
-toneMappingFolder
-	.add(debugObject, 'exposure', 0.1, 2)
-	.onChange(function (value) {
-		renderer.toneMappingExposure = Math.pow(value, 4.0)
-		// tic()
-	})
+	const toneMappingFolder = gui.addFolder('tone mapping')
+
+	toneMappingFolder
+		.add(debugObject, 'exposure', 0.1, 2)
+		.onChange(function (value) {
+			renderer.toneMappingExposure = Math.pow(value, 4.0)
+			// tic()
+		})
+
+	gui.close()
+}
 
 handleResize()
 
-gui.close()
 /**
  * frame loop
  */
@@ -970,7 +993,7 @@ function tic() {
 			gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable).texture
 	}
 
-	stats.update()
+	// stats.update()
 
 	// renderer.render(scene, camera)
 	composer.render()
