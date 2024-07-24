@@ -236,7 +236,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 				animations.lieLoop.play()
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-					value: 0.3,
+					value: 0.5,
 					duration: 0.5,
 				})
 
@@ -264,7 +264,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 				animations.idle4.play()
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-					value: 2,
+					value: 1,
 					duration: 0.5,
 				})
 
@@ -274,7 +274,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 				// })
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence, {
-					value: 1.8,
+					value: 1.4,
 					duration: 0.5,
 				})
 
@@ -289,7 +289,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 				animations.runFront.play()
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence, {
-					value: 2,
+					value: 1.5,
 					duration: 2.5,
 				})
 
@@ -314,7 +314,7 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 				// })
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-					value: 1,
+					value: 0.7,
 					duration: 2,
 				})
 
@@ -1097,7 +1097,7 @@ function castSpell(action) {
 	// })
 
 	gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-		value: 3,
+		value: 1,
 		duration: 1,
 		ease: 'power2.inOut',
 		delay: 2,
@@ -1121,6 +1121,9 @@ function castSpell(action) {
 					autoAlpha: 0,
 					duration: 2,
 					delay: 1,
+					onComplete: () => {
+						gsap.set('#app', { autoAlpha: 0 })
+					},
 				})
 			},
 		})
