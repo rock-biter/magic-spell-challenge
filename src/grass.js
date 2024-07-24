@@ -7,6 +7,10 @@ import simplexNoise4d from './shaders/includes/simplexNoise4d.glsl'
 import simplexNoise3d from './shaders/includes/simplexNoise3d.glsl'
 import { MeshStandardMaterial } from 'three'
 
+const urlParams = new URLSearchParams(window.location.search)
+const debug = urlParams.get('debug')
+// console.log(debug)
+
 const linePoints = [
 	new Vector3(0, 0, 0),
 	new Vector3(0, 0.2, 0),
@@ -80,7 +84,7 @@ export default class Grass extends Object3D {
 
 			shader.uniforms.uTime = new Uniform(0)
 			shader.uniforms.uSpeed = new Uniform(0)
-			shader.uniforms.uIntro = new Uniform(0)
+			shader.uniforms.uIntro = new Uniform(debug ? 1 : 0)
 			shader.uniforms.uRadius = new Uniform(this.r)
 
 			let token = '#include <common>'

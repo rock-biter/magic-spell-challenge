@@ -20,7 +20,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 
-// import Stats from 'three/addons/libs/stats.module.js'
+import Stats from 'three/addons/libs/stats.module.js'
 import { Matrix4 } from 'three'
 import { LoopOnce } from 'three'
 import gsap from 'gsap'
@@ -32,13 +32,15 @@ import { SplitText } from 'gsap/all'
 
 gsap.registerPlugin(SplitText)
 
-// const stats = new Stats()
-// document.body.appendChild(stats.dom)
+const urlParams = new URLSearchParams(window.location.search)
+const debug = urlParams.get('debug')
+// console.log(debug)
+
+const stats = debug ? new Stats() : null
+if (stats) document.body.appendChild(stats.dom)
 
 const loadingManager = new THREE.LoadingManager()
 const gltfLoader = new GLTFLoader(loadingManager)
-
-loadingManager.onLoad = () => {}
 
 const deer = {
 	model: null,
@@ -52,7 +54,23 @@ const debugObject = {
 	strength: 0.4,
 	radius: 0,
 	exposure: 1.15,
-	intro: 1,
+	intro: debug ? 1 : 0,
+	baseColor: 0x70e2ff,
+
+	grass: {
+		speedEnabled: false,
+		speed: 6,
+		// material params
+	},
+	particles: {
+		speed: 6,
+		curl: {
+			intensity: 0,
+			scaleX: 1,
+			scaleY: 1,
+			scaleZ: 1,
+		},
+	},
 }
 
 const input = document.getElementById('always')
@@ -73,68 +91,18 @@ gsap.set(question.chars, {
 	},
 })
 
-gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
-	deer.model = gltf.scene
-	deer.model.scale.setScalar(0.075)
-	scene.add(deer.model)
-
-	const matrix = new Matrix4()
-
-	gsap.to(question.chars, {
-		autoAlpha: 1,
-		y: 0,
-		x: 0,
-		rotate: 0,
-		duration: 3,
-		stagger: 0.1,
-		filter: 'blur(0px)',
-		ease: 'elastic.out(0.6,0.4)',
-		onComplete: () => {
-			gsap.to(input, { autoAlpha: 1, duration: 1 })
-		},
-	})
-
-	deer.model.traverse((el) => {
-		if (el instanceof THREE.Mesh) {
-			// el.material = new THREE.MeshStandardMaterial({
-			// 	color: new THREE.Color().setHSL(0.5, 1, 1),
-
-			// })
-			const mat = el.material
-			deer.material = mat
-			deer.mesh = el
-			// console.log(deer.mesh, gltf.scene)
-
-			patronum(mat)
-
-			createGPGPUParticles({ mesh: el })
-		}
-	})
-
-	deer.matrix = matrix
-	// console.log('matrix', matrix)
-
+function initAnimations(deer, gltf) {
 	deer.mixer = new THREE.AnimationMixer(gltf.scene)
 	// console.log(gltf.animations)
 
 	const animations = {}
 	deer.animations = animations
-
 	animations.runJump = deer.mixer.clipAction(gltf.animations[98])
-	// runJump.setLoop(false)
 	animations.runFront = deer.mixer.clipAction(gltf.animations[43])
-
 	animations.idle2 = deer.mixer.clipAction(gltf.animations[19])
 	animations.idle4 = deer.mixer
 		.clipAction(gltf.animations[21])
 		.setLoop(LoopOnce, 1)
-
-	// deer.animations.runFront.play()
-	// deer.animations.runFront.clampWhenFinished = true
-	// deer.animations.runJump.clampWhenFinished = true
-
-	// jump
-
 	animations.sleepLoop = deer.mixer.clipAction(gltf.animations[40])
 	animations.sleepEnd = deer.mixer
 		.clipAction(gltf.animations[39])
@@ -155,79 +123,9 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	animations.lieEnd.clampWhenFinished = true
 	animations.idle4.clampWhenFinished = true
 
-	// deer.animations.jumpStart = deer.mixer
-	// 	.clipAction(gltf.animations[32])
-	// 	.setLoop(THREE.LoopOnce, 1)
-	// deer.animations.jumpUp = deer.mixer
-	// 	.clipAction(gltf.animations[35])
-	// 	.setLoop(LoopOnce, 1)
-	// deer.animations.jumpHoriz = deer.mixer
-	// 	.clipAction(gltf.animations[31])
-	// 	.setLoop(LoopOnce, 1)
-	// deer.animations.jumpDown = deer.mixer
-	// 	.clipAction(gltf.animations[25])
-	// 	.setLoop(LoopOnce, 1)
-	// deer.animations.jumpEnd = deer.mixer
-	// 	.clipAction(gltf.animations[28])
-	// 	.setLoop(LoopOnce, 1)
-
-	// deer.animations.jumpStart.play()
-	// deer.animations.jumpUp.play()
-
-	// deer.animations.jumpHoriz.play()
-	// deer.animations.jumpDown.play()
-	// deer.animations.jumpEnd.play()
-
-	let action = deer.animations.sleepLoop
-
+	let action = debug ? deer.animations.runFront : deer.animations.sleepLoop
+	deer.action = action
 	action.play()
-
-	// setInterval(() => {
-	// 	if (action === deer.animations.runFront) {
-	// 		action.crossFadeTo(deer.animations.runJump, 0.25, true)
-	// 		action = deer.animations.runJump
-	// 		// deer.animations.runJump.reset()
-	// 	} else {
-	// 		action.crossFadeTo(deer.animations.runFront, 0.25, true)
-	// 		action = deer.animations.runFront
-	// 		// deer.animations.runFront.reset()
-	// 	}
-	// 	action.reset()
-	// 	action.play()
-	// }, 5000)
-
-	input?.addEventListener('keyup', (e) => {
-		// console.log(e.code)
-
-		input.value = input.value.trim()
-		// console.log(input.value)
-		contentVisible.innerHTML = input.value
-		if (input.value.toLowerCase() === 'always') {
-			input.blur()
-			gsap.to(input, {
-				autoAlpha: 0,
-				duration: 1,
-				delay: 0.5,
-				onComplete: () => {
-					castSpell(action)
-				},
-			})
-			// gsap.to(input, { autoAlpha: 0, duration: 0.5 })
-		}
-	})
-
-	// window.addEventListener(
-	// 	'click',
-	// 	() => {
-	// 		action.crossFadeTo(animations.sleepEnd, 0.5, true)
-	// 		animations.sleepEnd.play()
-	// 		gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-	// 			value: 0.5,
-	// 			duration: 0.5,
-	// 		})
-	// 	},
-	// 	{ once: true }
-	// )
 
 	deer.mixer.addEventListener('finished', (e) => {
 		switch (e.action) {
@@ -326,10 +224,71 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 				break
 		}
 	})
+}
+
+gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
+	deer.model = gltf.scene
+	deer.model.scale.setScalar(0.075)
+	scene.add(deer.model)
+
+	const matrix = new Matrix4()
+
+	if (!debug) {
+		gsap.to(question.chars, {
+			autoAlpha: 1,
+			y: 0,
+			x: 0,
+			rotate: 0,
+			duration: 3,
+			stagger: 0.1,
+			filter: 'blur(0px)',
+			ease: 'elastic.out(0.6,0.4)',
+			onComplete: () => {
+				gsap.to(input, { autoAlpha: 1, duration: 1 })
+			},
+		})
+	}
+
+	deer.model.traverse((el) => {
+		if (el instanceof THREE.Mesh) {
+			const mat = el.material
+			deer.material = mat
+			deer.mesh = el
+			patronum(mat)
+			createGPGPUParticles({ mesh: el })
+		}
+	})
+
+	deer.matrix = matrix
+	// console.log('matrix', matrix)
+
+	initAnimations(deer, gltf)
 
 	gpgpu.particlesVariable.material.uniforms.uModelMatrix.value =
 		deer.mesh.matrixWorld
 	// console.log(deer.model, gltf)
+
+	if (!debug) {
+		input?.addEventListener('keyup', (e) => {
+			// console.log(e.code)
+
+			input.value = input.value.trim()
+			// console.log(input.value)
+			contentVisible.innerHTML = input.value
+			if (input.value.toLowerCase() === 'always') {
+				input.blur()
+				gsap.to(input, {
+					autoAlpha: 0,
+					duration: 1,
+					delay: 0.5,
+					onComplete: () => {
+						castSpell(deer.action)
+					},
+				})
+				// gsap.to(input, { autoAlpha: 0, duration: 0.5 })
+			}
+		})
+	}
 })
 
 const gpgpu = {}
@@ -419,10 +378,14 @@ function createGPGPUParticles({ mesh }) {
 
 	gpgpu.particlesVariable.material.uniforms.uBoneTexture = new THREE.Uniform()
 	gpgpu.particlesVariable.material.uniforms.uModelMatrix = new THREE.Uniform()
-	gpgpu.particlesVariable.material.uniforms.uSpeed = new THREE.Uniform(0)
+	gpgpu.particlesVariable.material.uniforms.uSpeed = new THREE.Uniform(
+		debugObject.grass.speedEnabled ? debugObject.grass.speed : 0
+	)
 
 	// add uniforms params
-	gpgpu.particlesVariable.material.uniforms.uIntro = new THREE.Uniform(0) //2
+	gpgpu.particlesVariable.material.uniforms.uIntro = new THREE.Uniform(
+		debugObject.intro
+	) //2
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence =
 		new THREE.Uniform(0.3) //2
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength =
@@ -502,7 +465,7 @@ function createGPGPUParticles({ mesh }) {
 		uniforms: {
 			uSize: new THREE.Uniform(0.03),
 			// uSize: new THREE.Uniform(0.0),
-			uIntro: new THREE.Uniform(0),
+			uIntro: new THREE.Uniform(debugObject.intro),
 			uResolution: new THREE.Uniform(
 				new THREE.Vector2(
 					sizes.width * sizes.pixelRatio,
@@ -600,7 +563,7 @@ function patronum(material) {
 		shader.uniforms.uCamera = new THREE.Uniform(new THREE.Vector3(0, 0, 0))
 		shader.uniforms.uColor = new THREE.Uniform(new THREE.Color(0x70e2ff))
 		shader.uniforms.uTime = new THREE.Uniform(0)
-		shader.uniforms.uIntro = new THREE.Uniform(configs.intro)
+		shader.uniforms.uIntro = new THREE.Uniform(debugObject.intro)
 
 		// window.addEventListener('click', () => {
 		// castSpell()
@@ -751,6 +714,11 @@ function patronum(material) {
 
 		// 	`
 		// )
+
+		// if (debug) {
+		// 	// console.log('uniforms', deer.uniforms)
+		// 	castSpell(deer.action)
+		// }
 	}
 }
 
@@ -758,20 +726,19 @@ function patronum(material) {
  * Debug
  */
 // __gui__
-const configs = {
-	example: 5,
-	baseColor: 0x70e2ff,
-	intro: 0,
-}
-let gui // = new dat.GUI()
+// const configs = {
+// 	baseColor: 0x70e2ff,
+// 	intro: 0,
+// }
+let gui = debug ? new dat.GUI() : undefined
 if (gui) {
-	gui.add(configs, 'intro', 0, 1, 0.01).onChange((val) => {
+	gui.add(debugObject, 'intro', 0, 1, 0.01).onChange((val) => {
 		deer.uniforms.uIntro.value = val
 		grass.uniforms.uIntro.value = val
 		gpgpu.particlesVariable.material.uniforms.uIntro.value = val
 	})
 
-	gui.addColor(configs, 'baseColor').onChange((val) => {
+	gui.addColor(debugObject, 'baseColor').onChange((val) => {
 		// console.log(val)
 		deer.uniforms?.uColor?.value?.set(val)
 	})
@@ -784,27 +751,6 @@ const scene = new THREE.Scene()
 
 const grass = new Grass()
 scene.add(grass)
-
-// __box__
-/**
- * BOX
- */
-// const material = new THREE.MeshNormalMaterial()
-// const material = new THREE.MeshStandardMaterial({ color: 'coral' })
-// const geometry = new THREE.BoxGeometry(1, 1, 1)
-// const mesh = new THREE.Mesh(geometry, material)
-// mesh.position.y += 0.5
-// scene.add(mesh)
-
-// __floor__
-/**
- * Plane
- */
-// const groundMaterial = new THREE.MeshStandardMaterial({ color: 'lightgray' })
-// const groundGeometry = new THREE.PlaneGeometry(10, 10)
-// groundGeometry.rotateX(-Math.PI * 0.5)
-// const ground = new THREE.Mesh(groundGeometry, groundMaterial)
-// scene.add(ground)
 
 /**
  * render sizes
@@ -855,14 +801,15 @@ document.body.appendChild(renderer.domElement)
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.target.set(0, 4, 0)
 controls.enableDamping = true
-controls.autoRotate = true
-controls.autoRotateSpeed = 0
-controls.enablePan = false
-
-controls.minPolarAngle = Math.PI * 0.15
-controls.maxPolarAngle = Math.PI * 0.55
-controls.maxDistance = 24
-controls.minDistance = 8
+if (!debug) {
+	controls.autoRotate = true
+	controls.autoRotateSpeed = 0
+	controls.enablePan = false
+	controls.minPolarAngle = Math.PI * 0.15
+	controls.maxPolarAngle = Math.PI * 0.55
+	controls.maxDistance = 24
+	controls.minDistance = 8
+}
 
 /**
  * Lights
@@ -983,8 +930,11 @@ function tic() {
 
 	if (grass.uniforms?.uTime && deer.uniforms) {
 		grass.uniforms.uTime.value = time
-		let speed = gpgpu.particlesVariable.material.uniforms.uSpeed.value / 6
-		grass.uniforms.uSpeed.value += deltaTime * speed
+		if (!debug) {
+			let speed = gpgpu.particlesVariable.material.uniforms.uSpeed.value / 6
+
+			grass.uniforms.uSpeed.value += deltaTime * speed
+		}
 
 		// console.log(grass.uniforms.uSpeed.value)
 	}
@@ -999,7 +949,7 @@ function tic() {
 			gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable).texture
 	}
 
-	// stats.update()
+	if (debug) stats.update()
 
 	// renderer.render(scene, camera)
 	composer.render()
@@ -1050,10 +1000,12 @@ const sounds = [
 	},
 ]
 
-const mixer = new Mixer({ sounds })
+const mixer = new Mixer({ sounds, loadingManager })
 
 function castSpell(action) {
-	mixer.play()
+	if (!debug) {
+		mixer.play()
+	}
 
 	gsap.to(deer.uniforms.uIntro, {
 		value: 1,
@@ -1132,4 +1084,13 @@ function castSpell(action) {
 	// 	ease: 'power2.inOut',
 	// 	delay: 1.2,
 	// })
+}
+
+loadingManager.onProgress = (...args) => {
+	// console.log('progress', ...args)
+}
+
+loadingManager.onLoad = () => {
+	// remove spinner
+	// console.log('manager on load')
 }
