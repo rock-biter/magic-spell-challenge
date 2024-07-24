@@ -856,7 +856,7 @@ const controls = new OrbitControls(camera, renderer.domElement)
 controls.target.set(0, 4, 0)
 controls.enableDamping = true
 controls.autoRotate = true
-controls.autoRotateSpeed = 1
+controls.autoRotateSpeed = 0
 controls.enablePan = false
 
 controls.minPolarAngle = Math.PI * 0.15
@@ -1079,12 +1079,15 @@ function castSpell(action) {
 	})
 
 	gsap.to(camera.position, {
-		y: 3.5,
+		y: 4,
 		x: 10,
-		z: 13,
+		z: 14,
 		duration: 2,
 		ease: 'expo.out',
 		delay: 1.5,
+		onComplete: () => {
+			gsap.to(controls, { autoRotateSpeed: 1.2, delay: 1.55 })
+		},
 	})
 
 	// gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
