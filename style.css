@@ -6,3 +6,11 @@ html,
 body {
 	overflow: hidden;
 }
+
+input:-webkit-autofill {
+	background-color: transparent !important;
+	-webkit-box-shadow: 0 0 0px 1000px white inset !important;
+	box-shadow: 0 0 0px 1000px white inset !important;
+	-webkit-text-fill-color: #000 !important;
+	caret-color: #000 !important;
+}

@@ -6,8 +6,31 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>EXPECTO PATRONUM</title>
 	</head>
-	<body>
-		<div id="app"></div>
+	<body style="background-color: black">
+		<div id="app">
+			<div>
+				<div id="spell-name"></div>
+				<div
+					class="fixed font-thin select-none flex gap-4 z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-3xl"
+				>
+					<h1 id="question" class="py-2 text-gray-300">After all this time?</h1>
+					<div class="relative">
+						<input
+							type="text"
+							id="always"
+							value=""
+							autocomplete="off"
+							style="opacity: 0; visibility: hidden"
+							class="text-sky-300 caret-white font-medium !bg-transparent outline-none px-4 py-2 flex items-center w-32 border-b border-gray-400 cursor-text"
+						/>
+						<div
+							id="content-visible"
+							class="text-white font-medium pointer-events-none h-full !bg-transparent outline-none px-4 py-2 absolute left-0 top-0 flex items-center w-32 cursor-text"
+						></div>
+					</div>
+				</div>
+			</div>
+		</div>
 		<script type="module" src="/main.js"></script>
 	</body>
 </html>

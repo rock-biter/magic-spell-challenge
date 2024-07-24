@@ -4,8 +4,8 @@ import { MeshBasicMaterial } from 'three'
 import { LineBasicMaterial } from 'three'
 import { BufferGeometry, Object3D, Vector3 } from 'three'
 import simplexNoise4d from './shaders/includes/simplexNoise4d.glsl'
+import simplexNoise3d from './shaders/includes/simplexNoise3d.glsl'
 import { MeshStandardMaterial } from 'three'
-import { mx_bilerp_0 } from 'three/examples/jsm/nodes/materialx/lib/mx_noise.js'
 
 const linePoints = [
 	new Vector3(0, 0, 0),
@@ -31,7 +31,8 @@ export default class Grass extends Object3D {
 			// de,
 		})
 
-		this.mesh = new InstancedMesh(this.geometry, this.material, 30000)
+		const count = window.innerWidth < 768 ? 12000 : 20000
+		this.mesh = new InstancedMesh(this.geometry, this.material, count)
 
 		this.add(this.mesh)
 
@@ -90,6 +91,7 @@ export default class Grass extends Object3D {
 				/*glsl*/ `
         ${token}
         ${simplexNoise4d}
+				${simplexNoise3d}
 
         uniform float uTime;
         uniform float uIntro;
@@ -105,6 +107,7 @@ export default class Grass extends Object3D {
 				/*glsl*/ `
         ${token}
         ${simplexNoise4d}
+				${simplexNoise3d}
 
         uniform float uTime;
         uniform float uIntro;
@@ -134,7 +137,7 @@ export default class Grass extends Object3D {
         mvPosition.z = mod(mvPosition.z + size,size * 2.) - size;
         vec4 wPos = modelMatrix * mvPosition;
 
-        mvPosition.x += simplexNoise4d(vec4(wPos.xyz * 0.1,uTime * 0.3)) * 2. * wPos.y;
+        mvPosition.x += simplexNoise4d(vec4(wPos.xyz * 0.1,uTime * 0.3)) * 1.5 * wPos.y;
         // mvPosition.z += simplexNoise4d(vec4(wPos.xyz * 0.2,uTime * 0.5)) * 2. * wPos.y;
         
         vPosition = wPos.xyz;
@@ -161,12 +164,13 @@ export default class Grass extends Object3D {
         float introFactor = 0.;
         if(uIntro != 1.) {
 
-          float distanceNoise = simplexNoise4d(vec4(vPosition * 0.2,uTime * 0.1)) * 2.;
+          float distanceNoise = simplexNoise3d(vPosition * 0.2) * 2.;
           float waveRadius = (uRadius ) * waveIntro + 2. * waveIntro;
-          float inWave = 1. - smoothstep(waveRadius + 1. * waveIntro,waveRadius - 8. * waveIntro,len + distanceNoise);
+          float inWave = 1. - smoothstep(waveRadius,waveRadius - 8. * waveIntro,len + distanceNoise);
           float outWave = 1. - smoothstep(waveRadius,waveRadius + 1. * waveIntro,len + distanceNoise);
           
-          introFactor += inWave * outWave * smoothstep(uRadius,0.,waveRadius) * 5.;
+          introFactor += inWave * outWave * smoothstep(uRadius,0.,waveRadius);
+					introFactor = pow(introFactor,3.) * 5.;
         }
 
         noise = noise * 0.5 + 0.5;

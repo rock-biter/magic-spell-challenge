@@ -27,12 +27,18 @@ import gsap from 'gsap'
 import { Vector3 } from 'three'
 import { AdditiveBlending } from 'three'
 import Grass from './src/grass'
+import Mixer from './src/audio'
+import { SplitText } from 'gsap/all'
+
+gsap.registerPlugin(SplitText)
 
 const stats = new Stats()
 document.body.appendChild(stats.dom)
 
 const loadingManager = new THREE.LoadingManager()
 const gltfLoader = new GLTFLoader(loadingManager)
+
+loadingManager.onLoad = () => {}
 
 const deer = {
 	model: null,
@@ -49,12 +55,42 @@ const debugObject = {
 	intro: 1,
 }
 
+const input = document.getElementById('always')
+const contentVisible = document.getElementById('content-visible')
+const question = new SplitText('#question', { type: 'chars' })
+gsap.set(question.chars, {
+	autoAlpha: 0,
+	y: () => {
+		return Math.random() * 200 - 100
+	},
+	x: (i) => {
+		console.log(i)
+		return Math.random() * (i + 2) * 5
+	},
+	rotate: () => {
+		return 0.5 * Math.PI * (Math.random() * 2 - 1) + 'rad'
+	},
+})
+
 gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	deer.model = gltf.scene
 	deer.model.scale.setScalar(0.075)
 	scene.add(deer.model)
 
 	const matrix = new Matrix4()
+
+	gsap.to(question.chars, {
+		autoAlpha: 1,
+		y: 0,
+		x: 0,
+		rotate: 0,
+		duration: 3,
+		stagger: 0.1,
+		ease: 'elastic.out(0.6,0.4)',
+		onComplete: () => {
+			gsap.to(input, { autoAlpha: 1, duration: 1 })
+		},
+	})
 
 	deer.model.traverse((el) => {
 		if (el instanceof THREE.Mesh) {
@@ -158,18 +194,32 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 	// 	action.play()
 	// }, 5000)
 
-	window.addEventListener(
-		'click',
-		() => {
-			action.crossFadeTo(animations.sleepEnd, 0.5, true)
-			animations.sleepEnd.play()
-			gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-				value: 0.5,
-				duration: 0.5,
-			})
-		},
-		{ once: true }
-	)
+	input?.addEventListener('keyup', (e) => {
+		// console.log(e.code)
+
+		input.value = input.value.trim()
+		// console.log(input.value)
+		contentVisible.innerHTML = input.value
+		if (input.value.toLowerCase() === 'always') {
+			castSpell(action)
+
+			gsap.to(input, { autoAlpha: 0, duration: 0.5 })
+			gsap.to(input, { autoAlpha: 0, duration: 0.5 })
+		}
+	})
+
+	// window.addEventListener(
+	// 	'click',
+	// 	() => {
+	// 		action.crossFadeTo(animations.sleepEnd, 0.5, true)
+	// 		animations.sleepEnd.play()
+	// 		gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+	// 			value: 0.5,
+	// 			duration: 0.5,
+	// 		})
+	// 	},
+	// 	{ once: true }
+	// )
 
 	deer.mixer.addEventListener('finished', (e) => {
 		switch (e.action) {
@@ -268,55 +318,6 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 				break
 		}
 	})
-	// 	console.log('finished', e)
-
-	// 	const animName = e.action._clip.name
-
-	// 	console.log(action)
-
-	// 	if (animName === action._clip.name) {
-	// 		action.reset()
-	// 		action.play()
-	// 	} else {
-	// 		action.reset()
-	// 		action.play()
-	// 		action.crossFadeFrom(e.action, 0.5, true)
-	// 	}
-
-	// 	// switch (animName) {
-	// 	// 	case 'Arm_Deer|Jump_start_IP':
-	// 	// 		deer.animations.jumpUp.clampWhenFinished = true
-	// 	// 		deer.animations.jumpUp.play()
-	// 	// 		deer.animations.jumpDown.play()
-	// 	// 		deer.animations.jumpDown.crossFadeFrom(
-	// 	// 			deer.animations.jumpUp,
-	// 	// 			0.3,
-	// 	// 			true
-	// 	// 		)
-
-	// 	// 		// // deer.animations.jumpEnd.play()
-	// 	// 		deer.animations.jumpDown.clampWhenFinished = true
-
-	// 	// 	case 'Arm_Deer|Jump_down_low':
-	// 	// 		deer.animations.jumpEnd.play()
-	// 	// 		break
-	// 	// }
-	// })
-
-	// setTimeout(() => {
-	// 	console.log('cross fade to run')
-	// 	// deer.animations.runJum.crossFadeTo(deer.animations.runFront, 0.5,true)
-	// 	// deer.animations.runFront.time = 0
-	// 	// deer.animations.runFront.enabled = true
-	// 	// deer.animations.runFront.setEffectiveTimeScale(1)
-	// 	// deer.animations.runFront.setEffectiveWeight(1)
-	// 	// deer.animations.runFront.crossFadeFrom(deer.animations.runJum, 0.5, true)
-	// 	// deer.animations.runFront.play()
-
-	// 	// deer.animations.idle2.play()
-	// }, 3000)
-
-	// runJump.play()
 
 	gpgpu.particlesVariable.material.uniforms.uModelMatrix.value =
 		deer.mesh.matrixWorld
@@ -584,37 +585,7 @@ function patronum(material) {
 		shader.uniforms.uIntro = new THREE.Uniform(configs.intro)
 
 		// window.addEventListener('click', () => {
-		gsap.to(deer.uniforms.uIntro, {
-			value: 1,
-			duration: 2.5,
-			ease: 'power2.inOut',
-			onUpdate: () => {
-				grass.uniforms.uIntro.value = deer.uniforms.uIntro.value
-				gpgpu.particlesVariable.material.uniforms.uIntro.value =
-					deer.uniforms.uIntro.value
-			},
-		})
-
-		// gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
-		// 	value: 1,
-		// 	duration: 1.5,
-		// 	ease: 'power2.inOut',
-		// })
-
-		gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-			value: 3,
-			duration: 1,
-			ease: 'power2.inOut',
-			delay: 2,
-		})
-
-		// gsap.to(particles.material.uniforms.uSize, {
-		// 	value: 0.2,
-		// 	duration: 1,
-		// 	ease: 'power2.inOut',
-		// 	delay: 1.2,
-		// })
-		// })
+		// castSpell()
 
 		let token = '#include <common>'
 
@@ -778,6 +749,7 @@ const gui = new dat.GUI()
 gui.add(configs, 'intro', 0, 1, 0.01).onChange((val) => {
 	deer.uniforms.uIntro.value = val
 	grass.uniforms.uIntro.value = val
+	gpgpu.particlesVariable.material.uniforms.uIntro.value = val
 })
 
 gui.addColor(configs, 'baseColor').onChange((val) => {
@@ -1034,4 +1006,89 @@ function handleResize() {
 	renderer.setPixelRatio(sizes.pixelRatio)
 	composer.setPixelRatio(sizes.pixelRatio)
 	// composer.reset()
+}
+
+const sounds = [
+	{
+		name: 'Emotional cinematic background music',
+		author: '??? - Pixabay.com',
+		src: '/sounds/emotional-cinematic-background-music-111908.mp3',
+	},
+	{
+		name: 'Inspirational sentimental Romantic',
+		author: '??? - Pixabay.com',
+		src: '/sounds/inspirational-sentimental-romantic-116955.mp3',
+	},
+]
+
+const mixer = new Mixer({ sounds })
+
+function castSpell(action) {
+	mixer.play()
+
+	gsap.to(deer.uniforms.uIntro, {
+		value: 1,
+		duration: 2.5,
+		ease: 'power2.inOut',
+		onUpdate: () => {
+			// grass.uniforms.uIntro.value = deer.uniforms.uIntro.value
+			gpgpu.particlesVariable.material.uniforms.uIntro.value =
+				deer.uniforms.uIntro.value
+		},
+	})
+
+	gsap.to(grass.uniforms.uIntro, {
+		value: 1,
+		duration: 3.5,
+		ease: 'expo.out',
+		// onUpdate: () => {
+		// 	grass.uniforms.uIntro.value = deer.uniforms.uIntro.value
+		// 	gpgpu.particlesVariable.material.uniforms.uIntro.value =
+		// 		deer.uniforms.uIntro.value
+		// },
+		delay: 1,
+	})
+
+	// gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
+	// 	value: 1,
+	// 	duration: 1.5,
+	// 	ease: 'power2.inOut',
+	// })
+
+	gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+		value: 3,
+		duration: 1,
+		ease: 'power2.inOut',
+		delay: 2,
+	})
+
+	setTimeout(() => {
+		action.crossFadeTo(deer.animations.sleepEnd, 0.5, true)
+		deer.animations.sleepEnd.play()
+		gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
+			value: 0.5,
+			duration: 0.5,
+		})
+
+		gsap.to(question.chars, {
+			autoAlpha: 0,
+			stagger: 0.1,
+			duration: 2,
+			onComplete: () => {
+				gsap.set('#question', { autoAlpha: 0 })
+				gsap.to(contentVisible, {
+					autoAlpha: 0,
+					duration: 2,
+					delay: 1,
+				})
+			},
+		})
+	}, 6000)
+
+	// gsap.to(particles.material.uniforms.uSize, {
+	// 	value: 0.2,
+	// 	duration: 1,
+	// 	ease: 'power2.inOut',
+	// 	delay: 1.2,
+	// })
 }
