@@ -859,8 +859,8 @@ controls.autoRotate = true
 controls.autoRotateSpeed = 1
 controls.enablePan = false
 
-controls.minPolarAngle = Math.PI * 0.1
-controls.maxPolarAngle = Math.PI * 0.5
+controls.minPolarAngle = Math.PI * 0.15
+controls.maxPolarAngle = Math.PI * 0.55
 controls.maxDistance = 24
 controls.minDistance = 8
 
@@ -1076,6 +1076,15 @@ function castSpell(action) {
 		// 		deer.uniforms.uIntro.value
 		// },
 		delay: 1,
+	})
+
+	gsap.to(camera.position, {
+		y: 3.5,
+		x: 10,
+		z: 13,
+		duration: 2,
+		ease: 'expo.out',
+		delay: 1.5,
 	})
 
 	// gsap.to(gpgpu.particlesVariable.material.uniforms.uIntro, {
