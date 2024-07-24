@@ -1079,9 +1079,9 @@ function castSpell(action) {
 	})
 
 	gsap.to(camera.position, {
-		y: 4,
-		x: 10,
-		z: 14,
+		y: 5,
+		x: 13,
+		z: 17,
 		duration: 2,
 		ease: 'expo.out',
 		delay: 1.5,

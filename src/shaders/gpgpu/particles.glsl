@@ -110,7 +110,7 @@ void main()
             simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 2.0, time * 0.5))
         );
         flowField = normalize(flowField) * 0.5;
-        flowField.z = -abs(flowField.z ) * uSpeed;
+        flowField.z = -abs(flowField.z ) * (1. + uSpeed);
         particle.xyz += flowField * uDeltaTime * uFlowFieldStrength * uFlowFieldInfluence;
         
         // particle.z += -0.2;
