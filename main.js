@@ -11,6 +11,7 @@ import {
 	// ShaderPass,
 } from 'three/examples/jsm/Addons.js'
 import simplexNoise4D from './src/shaders/simplex-noise-4d.glsl'
+import noise4d from './src/shaders/includes/noise4d.glsl'
 import rotateMat3 from './src/shaders/rotate-mat-3.glsl'
 import particlesVertexShader from './src/shaders/particles/vertex.glsl'
 import particlesFragmentShader from './src/shaders/particles/fragment.glsl'
@@ -36,11 +37,21 @@ const urlParams = new URLSearchParams(window.location.search)
 const debug = urlParams.get('debug')
 // console.log(debug)
 
+if (debug) {
+	gsap.set('#app', { autoAlpha: 0 })
+}
+
 const stats = debug ? new Stats() : null
 if (stats) document.body.appendChild(stats.dom)
 
 const loadingManager = new THREE.LoadingManager()
 const gltfLoader = new GLTFLoader(loadingManager)
+const textureLoader = new THREE.TextureLoader(loadingManager)
+
+const tNoise = textureLoader.load('/textures/noise.png')
+tNoise.wrapS = THREE.RepeatWrapping
+tNoise.wrapT = THREE.RepeatWrapping
+tNoise.flipY = false
 
 const deer = {
 	model: null,
@@ -63,7 +74,8 @@ const debugObject = {
 		// material params
 	},
 	particles: {
-		speed: 6,
+		life: debug ? 0.5 : 0.5,
+		speed: debug ? 6 : 0,
 		curl: {
 			intensity: 0,
 			scaleX: 1,
@@ -134,7 +146,7 @@ function initAnimations(deer, gltf) {
 				animations.lieLoop.play()
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uLife, {
-					value: 0.3,
+					value: 0.2,
 					duration: 0.5,
 				})
 
@@ -197,7 +209,7 @@ function initAnimations(deer, gltf) {
 				})
 
 				gsap.to(gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency, {
-					value: 0.04,
+					value: 0.38,
 					duration: 2.5,
 				})
 
@@ -379,7 +391,7 @@ function createGPGPUParticles({ mesh }) {
 	gpgpu.particlesVariable.material.uniforms.uBoneTexture = new THREE.Uniform()
 	gpgpu.particlesVariable.material.uniforms.uModelMatrix = new THREE.Uniform()
 	gpgpu.particlesVariable.material.uniforms.uSpeed = new THREE.Uniform(
-		debugObject.grass.speedEnabled ? debugObject.grass.speed : 0
+		debugObject.particles.speed
 	)
 
 	// add uniforms params
@@ -387,27 +399,31 @@ function createGPGPUParticles({ mesh }) {
 		debugObject.intro
 	) //2
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldInfluence =
-		new THREE.Uniform(0.3) //2
+		new THREE.Uniform(debug ? 2 : 0.3) //2
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldStrength =
-		new THREE.Uniform(2.2) //7.9
+		new THREE.Uniform(debug ? 7.9 : 2.2) //7.9
 	gpgpu.particlesVariable.material.uniforms.uFlowFieldFrequency =
-		new THREE.Uniform(2) //0.04
-	gpgpu.particlesVariable.material.uniforms.uLife = new THREE.Uniform(0.4) //0.04
+		new THREE.Uniform(debug ? 0.38 : 2) //0.04
+	gpgpu.particlesVariable.material.uniforms.uLife = new THREE.Uniform(
+		debugObject.particles.life
+	) //0.04
 
 	// Init
 	gpgpu.computation.init()
 
 	// Debug Particles
-	// gpgpu.debug = new THREE.Mesh(
-	// 	new THREE.PlaneGeometry(3, 3),
-	// 	new THREE.MeshBasicMaterial({
-	// 		map: gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable)
-	// 			.texture,
-	// 	})
-	// )
-	// gpgpu.debug.position.x = 3
-	// gpgpu.debug.visible = false
-	// scene.add(gpgpu.debug)
+	if (debug) {
+		gpgpu.debug = new THREE.Mesh(
+			new THREE.PlaneGeometry(3, 3),
+			new THREE.MeshBasicMaterial({
+				map: gpgpu.computation.getCurrentRenderTarget(gpgpu.particlesVariable)
+					.texture,
+			})
+		)
+		gpgpu.debug.position.x = 3
+		gpgpu.debug.visible = false
+		scene.add(gpgpu.debug)
+	}
 
 	// Debug Bone
 	gpgpu.debug = new THREE.Mesh(
@@ -418,8 +434,8 @@ function createGPGPUParticles({ mesh }) {
 		})
 	)
 	gpgpu.debug.position.x = 3
-	gpgpu.debug.visible = false
-	scene.add(gpgpu.debug)
+	gpgpu.debug.visible = debug ? true : false
+	// scene.add(gpgpu.debug)
 
 	// particles
 	// Geometry
@@ -463,7 +479,7 @@ function createGPGPUParticles({ mesh }) {
 		// blending: AdditiveBlending,
 		depthWrite: false,
 		uniforms: {
-			uSize: new THREE.Uniform(0.03),
+			uSize: new THREE.Uniform(debug ? 0.04 : 0.03),
 			// uSize: new THREE.Uniform(0.0),
 			uIntro: new THREE.Uniform(debugObject.intro),
 			uResolution: new THREE.Uniform(
@@ -491,7 +507,7 @@ function createGPGPUParticles({ mesh }) {
 			.add(gpgpu.particlesVariable.material.uniforms.uSpeed, 'value')
 			.min(-10)
 			.max(10)
-			.step(0.01)
+			.step(debug ? debugObject.particles.speed : 0.01)
 			.name('uSpeed')
 		gui
 			.add(particles.material.uniforms.uSize, 'value')
@@ -749,8 +765,22 @@ if (gui) {
 const scene = new THREE.Scene()
 // scene.background = new THREE.Color(0xdedede)
 
-const grass = new Grass()
+const grass = new Grass(tNoise)
 scene.add(grass)
+
+if (debug) {
+	const grassFolder = gui.addFolder('Grass')
+
+	grassFolder
+		.add(grass.uniforms.uNoiseVelocity, 'value', 0, 1, 0.01)
+		.name('Velocity')
+	grassFolder
+		.add(grass.uniforms.uNoiseAmplitude, 'value', 0, 4, 0.1)
+		.name('Amplitude')
+	grassFolder
+		.add(grass.uniforms.uNoiseFrequency, 'value', 0.005, 0.1, 0.001)
+		.name('Frequency')
+}
 
 /**
  * render sizes
@@ -887,7 +917,7 @@ if (gui) {
 			// tic()
 		})
 
-	gui.close()
+	// gui.close()
 }
 
 handleResize()

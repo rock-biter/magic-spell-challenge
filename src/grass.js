@@ -19,11 +19,16 @@ const linePoints = [
 const GEOMETRY = new BufferGeometry().setFromPoints(linePoints)
 
 export default class Grass extends Object3D {
-	uniforms
+	uniforms = {
+		uNoiseFrequency: new Uniform(0.04),
+		uNoiseAmplitude: new Uniform(3),
+		uNoiseVelocity: new Uniform(0.15),
+	}
 
-	constructor() {
+	constructor(tNoise) {
 		super()
 
+		this.tNoise = tNoise
 		this.geometry = GEOMETRY
 		this.material = new MeshStandardMaterial({
 			color: 0x70e2ff,
@@ -80,12 +85,21 @@ export default class Grass extends Object3D {
 
 	onBeforeCompile() {
 		this.material.onBeforeCompile = (shader) => {
+			shader.uniforms = {
+				...shader.uniforms,
+				...this.uniforms,
+			}
+
 			this.uniforms = shader.uniforms
 
 			shader.uniforms.uTime = new Uniform(0)
 			shader.uniforms.uSpeed = new Uniform(0)
 			shader.uniforms.uIntro = new Uniform(debug ? 1 : 0)
 			shader.uniforms.uRadius = new Uniform(this.r)
+			// shader.uniforms.uNoiseFrequency = new Uniform(0.04)
+			// shader.uniforms.uNoiseAmplitude = new Uniform(2.5)
+			// shader.uniforms.uNoiseVelocity = new Uniform(0.1)
+			shader.uniforms.uNoise = new Uniform(this.tNoise)
 
 			let token = '#include <common>'
 
@@ -101,6 +115,10 @@ export default class Grass extends Object3D {
         uniform float uIntro;
         uniform float uSpeed;
         uniform float uRadius;
+        uniform float uNoiseFrequency;
+        uniform float uNoiseAmplitude;
+        uniform float uNoiseVelocity;
+				uniform sampler2D uNoise;
         varying vec3 vPosition;
         `
 			)
@@ -117,6 +135,10 @@ export default class Grass extends Object3D {
         uniform float uIntro;
         uniform float uSpeed;
         uniform float uRadius;
+				uniform float uNoiseFrequency;
+        uniform float uNoiseAmplitude;
+        uniform float uNoiseVelocity;
+				uniform sampler2D uNoise;
         varying vec3 vPosition;
         `
 			)
@@ -141,7 +163,11 @@ export default class Grass extends Object3D {
         mvPosition.z = mod(mvPosition.z + size,size * 2.) - size;
         vec4 wPos = modelMatrix * mvPosition;
 
-        mvPosition.x += simplexNoise4d(vec4(wPos.xyz * 0.1,uTime * 0.3)) * 1.5 * wPos.y;
+				float offset = texture2D(uNoise,wPos.xz * uNoiseFrequency + uTime * uNoiseVelocity).r - 0.4;
+				// offset *= 2.;
+				
+				// float offset = simplexNoise4d(vec4(wPos.xyz * 0.1,uTime * 0.3));
+        mvPosition.x += offset * uNoiseAmplitude * wPos.y * 2.;
         // mvPosition.z += simplexNoise4d(vec4(wPos.xyz * 0.2,uTime * 0.5)) * 2. * wPos.y;
         
         vPosition = wPos.xyz;
@@ -160,10 +186,16 @@ export default class Grass extends Object3D {
         float len = length(vPosition);
         float waveIntro = max(uIntro * 2. - 1., 0.);
         float distanceNoise = simplexNoise3d(vPosition * 0.2) * 2.;
+        // float distanceNoise = texture2D(uNoise,vPosition.xz * 1.).g * 5.;
         float distFactor = 1. - smoothstep(2.* waveIntro,uRadius * waveIntro,len - distanceNoise * 2. * waveIntro);
         // distFactor = pow(distFactor,1.);
-        float glitter = max(simplexNoise4d(vec4(vPosition * 80.,uTime * 0.5)) ,0.) ;
-        float noise = simplexNoise4d(vec4(vPosition * 0.1,uTime * 0.1));
+        // float glitter = max(simplexNoise4d(vec4(vPosition * 80.,uTime * 0.5)) ,0.) ;
+				vec2 noiseUv = vPosition.yx * 15.;
+				noiseUv.y += uTime * 0.1 + vPosition.z * 15.;
+				float glitter = smoothstep(0.32,0.65, texture2D(uNoise,noiseUv).r );
+        // float noise = simplexNoise4d(vec4(vPosition * 0.1,uTime * 0.1));
+        // float noise = smoothstep(0.32,0.65, texture2D(uNoise,noiseUv * 0.1).r );;
+        // float noise = texture2D(uNoise,vPosition.xz * 0.001).r;
         // noise = pow(noise,3.);
         float introFactor = 0.;
 
@@ -178,13 +210,14 @@ export default class Grass extends Object3D {
 					introFactor = pow(introFactor,3.) * 5.;
         }
 
-        noise = noise * 0.5 + 0.5;
+        // noise = noise * 0.5 + 0.5;
 
         // noise = pow(noise,2.);
         // diffuseColor.a *= simplexNoise4d(vec4(vPosition * 0.1,uTime * 0.5)) * 0.3 + 0.5 * simplexNoise4d(vec4(vPosition * 20.,uTime * 0.5)) * 0.2;
         // diffuseColor.a *= 0.7;
         // diffuseColor.a = noise * glitter * distFactor * introFactor;
-        diffuseColor.a = max( introFactor, noise * glitter * distFactor );
+        diffuseColor.a = max( introFactor, glitter * distFactor );
+				// diffuseColor.a = noise;
         ${token}
 
         

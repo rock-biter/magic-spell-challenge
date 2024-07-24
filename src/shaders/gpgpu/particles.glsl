@@ -30,7 +30,9 @@ mat4 getBoneMatrix( const in float i ) {
 
 }
 
-#include ../includes/simplexNoise4d.glsl
+// #include ../includes/simplexNoise4d.glsl
+// #include ../includes/noise4d.glsl
+#include ../includes/curl.glsl
 #include ../rotate-mat-3.glsl
 
 void main()
@@ -75,8 +77,13 @@ void main()
         base.xyz = rotationMatrix(vec3(0,0,1), angle) * base.xyz;
         base.xyz = rotationMatrix(vec3(0,1,0), angle) * base.xyz;
         base.xyz = rotationMatrix(vec3(1,0,0), -angle) * base.xyz;
-        float n = pow(intro,1.5) * (1. + inverseIntro * simplexNoise4d(vec4(base.xyz * 0.1,uTime)) * 3.5);
+        
+        // decommenta questo poi
+        // float n = pow(intro,1.5) * (1. + inverseIntro * simplexNoise4d(vec4(base.xyz * 0.1,uTime)) * 3.5);
+        // base.xyz *= n;
+        float n = pow(intro,1.5) * (1. + inverseIntro * cos(base.x * 10. + sin(base.y * 5.)) * sin(base.z * 3.) );
         base.xyz *= n;
+
         // float z = base.z;
 
         base.y += 2. * intro;
@@ -99,18 +106,21 @@ void main()
     else
     {
         // Strength
-        float strength = simplexNoise4d(vec4(base.xyz * 0.2, time + 1.0));
-        float influence = (uFlowFieldInfluence - 0.5) * (- 2.0);
-        strength = smoothstep(influence, 1.0, strength);
+        // float strength = simplexNoise4d(vec4(base.xyz * 0.2, time + 1.0));
+        // float influence = (uFlowFieldInfluence - 0.5) * (- 2.0);
+        // strength = smoothstep(influence, 1.0, strength);
 
         // Flow field
-        vec3 flowField = vec3(
-            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 0.0, time * 1.)),
-            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 1.0, time * 1.)),
-            simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 2.0, time * 0.5))
-        );
+        // vec3 flowField = vec3(
+        //     simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 0.0, time * 1.)),
+        //     simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 1.0, time * 1.)),
+        //     simplexNoise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 2.0, time * 0.5))
+        // );
+
+        // vec3 flowField = noise4d(vec4(particle.xyz * uFlowFieldFrequency * 1. + 0.0, time * 1.));
+        vec3 flowField = curlNoise(vec3(particle.xyz * uFlowFieldFrequency * 0.1 + time));
         flowField = normalize(flowField) * 0.5;
-        flowField.z = -abs(flowField.z ) * uSpeed;
+        flowField.z = -abs(flowField.z ) * (1. + uSpeed);
         particle.xyz += flowField * uDeltaTime * uFlowFieldStrength * uFlowFieldInfluence;
         
         // particle.z += -0.2;
