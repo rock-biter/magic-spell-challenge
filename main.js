@@ -80,6 +80,20 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 
 	const matrix = new Matrix4()
 
+	// gsap.to('#spinner', {
+	// 	autoAlpha: 0,
+	// 	duration: 1.5,
+	// 	// y: 10,
+	// 	ease: 'back',
+	// })
+
+	gsap.to('#spinner', {
+		autoAlpha: 0,
+		duration: 0.8,
+		scale: 0,
+		ease: 'back.in(4)',
+	})
+
 	gsap.to(question.chars, {
 		autoAlpha: 1,
 		y: 0,
@@ -87,8 +101,10 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 		rotate: 0,
 		duration: 3,
 		stagger: 0.1,
+		delay: 0.7,
 		filter: 'blur(0px)',
 		ease: 'elastic.out(0.6,0.4)',
+
 		onComplete: () => {
 			gsap.to(input, { autoAlpha: 1, duration: 1 })
 		},
