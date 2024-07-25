@@ -94,6 +94,11 @@ gltfLoader.load('/3d-models/deer/scene.gltf', (gltf) => {
 		ease: 'back.in(4)',
 	})
 
+	gsap.to('#question', {
+		autoAlpha: 1,
+		duration: 0.1,
+	})
+
 	gsap.to(question.chars, {
 		autoAlpha: 1,
 		y: 0,
