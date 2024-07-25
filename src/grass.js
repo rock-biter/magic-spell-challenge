@@ -31,7 +31,7 @@ export default class Grass extends Object3D {
 			// de,
 		})
 
-		const count = window.innerWidth < 768 ? 12000 : 20000
+		const count = window.innerWidth < 768 ? 8000 : 18000
 		this.mesh = new InstancedMesh(this.geometry, this.material, count)
 
 		this.add(this.mesh)
